@@ -1,0 +1,284 @@
+{
+    "districtStatisticsSummary": {
+        "totalAccounts": 67,
+        "totalAccountsByAgents": 0,
+        "totalApprovedAccounts": 16,
+        "totalBranches": 10,
+        "totalAccountsRegisterToOtherBranchStaff": 78,
+        "totalAgentCount": 0,
+        "totalAccountsAddedByOtherBranchStaff": 61
+    },
+    "districtClientCode": "CL-b78149fc",
+    "accountsGroupedByAccountType": {
+        "Fixed Time Deposit Account": 14,
+        "Non-Repatriable Birr Account": 6,
+        "Deposit Account": 48,
+        "Diaspora Wadia Saving Account": 4
+    },
+    "currentMonthTargetAchievements": [
+        {
+            "name": "New Accounts",
+            "achievements": 0,
+            "target": 30
+        },
+        {
+            "name": "Inactive Accounts",
+            "achievements": 0,
+            "target": 50
+        },
+        {
+            "name": "Agents",
+            "achievements": 0,
+            "target": 10
+        }
+    ],
+    "detailedBranchReports": {
+        "Aksum Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 10,
+            "approvedAccounts": 3,
+            "totalAccounts": 10,
+            "accountsByAgents": 0
+        },
+        "Adi-Haki Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 2,
+            "approvedAccounts": 0,
+            "totalAccounts": 2,
+            "accountsByAgents": 0
+        },
+        "Wukro Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 1,
+            "approvedAccounts": 0,
+            "totalAccounts": 1,
+            "accountsByAgents": 0
+        },
+        "Mekele Branch": {
+            "accountsRegisterToOtherBranch": 4,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 44,
+            "approvedAccounts": 10,
+            "totalAccounts": 44,
+            "accountsByAgents": 0
+        },
+        "Shire Branch": {
+            "accountsRegisterToOtherBranch": 74,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 0,
+            "approvedAccounts": 2,
+            "totalAccounts": 6,
+            "accountsByAgents": 0
+        },
+        "Enkodo Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 2,
+            "approvedAccounts": 0,
+            "totalAccounts": 2,
+            "accountsByAgents": 0
+        },
+        "Godena selam": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 0,
+            "approvedAccounts": 0,
+            "totalAccounts": 0,
+            "accountsByAgents": 0
+        },
+        "Adigrat Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 0,
+            "approvedAccounts": 0,
+            "totalAccounts": 0,
+            "accountsByAgents": 0
+        },
+        "Adwa Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 2,
+            "approvedAccounts": 1,
+            "totalAccounts": 2,
+            "accountsByAgents": 0
+        },
+        "Djibruk Branch": {
+            "accountsRegisterToOtherBranch": 0,
+            "agentCount": 0,
+            "accountsAddedByOtherBranchStaff": 0,
+            "approvedAccounts": 0,
+            "totalAccounts": 0,
+            "accountsByAgents": 0
+        }
+    },
+    "districtTargetAndAchievementsMonthly": [
+        {
+            "month": "JANUARY",
+            "registration": 0,
+            "target": 20
+        },
+        {
+            "month": "FEBRUARY",
+            "registration": 0,
+            "target": 25
+        },
+        {
+            "month": "MARCH",
+            "registration": 0,
+            "target": 50
+        },
+        {
+            "month": "APRIL",
+            "registration": 0,
+            "target": 20
+        },
+        {
+            "month": "MAY",
+            "registration": 0,
+            "target": 20
+        },
+        {
+            "month": "JUNE",
+            "registration": 0,
+            "target": 30
+        },
+        {
+            "month": "JULY",
+            "registration": 0,
+            "target": 25
+        },
+        {
+            "month": "AUGUST",
+            "registration": 0,
+            "target": 20
+        },
+        {
+            "month": "SEPTEMBER",
+            "registration": 0,
+            "target": 20
+        },
+        {
+            "month": "OCTOBER",
+            "registration": 0,
+            "target": 40
+        },
+        {
+            "month": "NOVEMBER",
+            "registration": 19,
+            "target": 30
+        },
+        {
+            "month": "DECEMBER",
+            "registration": 0,
+            "target": 30
+        }
+    ],
+    "accountsGroupedByStatusAndMonthlyData": {
+        "PENDING": {
+            "totalData": 31,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 31,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "APPROVED": {
+            "totalData": 19,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 19,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "UNSETTLED": {
+            "totalData": 19,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 19,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "REJECTED": {
+            "totalData": 2,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 2,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "AUTHORIZED": {
+            "totalData": 0,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 0,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "INITIAL": {
+            "totalData": 24,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 20,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 4,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        }
+    },
+    "districtClientName": "MEKELE"
+}

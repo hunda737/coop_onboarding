@@ -1,0 +1,321 @@
+FRONTEND DEVELOPMENT PROMPT: Account Flow Settings Management Page
+================================================================================
+
+OVERVIEW:
+Create a comprehensive admin page for managing Account Flow Settings. This feature allows bank administrators to configure automated routing rules for account approval workflows. Based on account properties (origin, document type, customer type), accounts can automatically skip to PENDING or APPROVED stages instead of following the standard workflow.
+
+================================================================================
+BUSINESS CONTEXT:
+================================================================================
+
+Current Default Workflow:
+1. INITIAL → User starts account creation
+2. REGISTERED → User completes all required fields
+3. UNSETTLED → Account number created via verify API
+4. PENDING → Branch staff deposits initial deposit
+5. AUTHORIZED → Bank member authorizes the account
+6. APPROVED/REJECTED → Account approver makes final decision
+
+New Capability:
+Rules can be configured to skip from REGISTERED directly to PENDING or APPROVED based on:
+- Account Origin (where the account was created)
+- Document Type (ID document provided)
+- Customer Type (individual, organization, or joint account)
+
+================================================================================
+DATA MODEL:
+================================================================================
+
+AccountFlowSettings Entity:
+{
+  id: number,                           // Primary key
+  accountOrigin: string | null,         // One of: DIASPORA_WEB, FAYDA_PASS, SMART_BRANCH, APP_FAYDA, APP_MANUAL, ORGANIZATION_LINK
+  documentStatus: string | null,        // One of: KEBELEID, EMPLOYEEID, PASSPORT, STUDENTID, DRIVING, NATIONALID
+  customerType: string | null,          // One of: INDIVIDUAL, ORGANIZATION, JOINT
+  targetStage: string,                  // Required. One of: PENDING, APPROVED
+  matchAllOrigins: boolean,             // If true, matches ANY account origin
+  matchAllDocuments: boolean,           // If true, matches ANY document type
+  matchAllCustomerTypes: boolean,       // If true, matches ANY customer type
+  isActive: boolean,                    // Enable/disable rule without deleting
+  priority: number,                     // Higher priority rules match first (0-999)
+  description: string,                  // Optional description of the rule
+  createdAt: datetime,                  // Auto-generated
+  updatedAt: datetime                   // Auto-generated
+}
+
+Enum Values:
+- AccountOrigin: DIASPORA_WEB, FAYDA_PASS, SMART_BRANCH, APP_FAYDA, APP_MANUAL, ORGANIZATION_LINK
+- DocumentStatus: KEBELEID, EMPLOYEEID, PASSPORT, STUDENTID, DRIVING, NATIONALID
+- CustomerType: INDIVIDUAL, ORGANIZATION, JOINT
+- TargetStage: PENDING, APPROVED (only these two allowed)
+
+================================================================================
+API ENDPOINTS:
+================================================================================
+
+Base URL: /api/account-flow-settings
+
+1. GET /api/account-flow-settings
+   - Description: Get all flow settings (active and inactive)
+   - Authorization: ADMIN, SUPER_ADMIN, BRANCH_STAFF, ACCOUNT_APPROVER
+   - Response: Array of AccountFlowSettings
+
+2. GET /api/account-flow-settings/active
+   - Description: Get only active flow settings (ordered by priority DESC)
+   - Authorization: ADMIN, SUPER_ADMIN, BRANCH_STAFF, ACCOUNT_APPROVER
+   - Response: Array of AccountFlowSettings
+
+3. GET /api/account-flow-settings/{id}
+   - Description: Get single flow setting by ID
+   - Authorization: ADMIN, SUPER_ADMIN, BRANCH_STAFF, ACCOUNT_APPROVER
+   - Response: AccountFlowSettings object
+
+4. POST /api/account-flow-settings
+   - Description: Create new flow setting
+   - Authorization: ADMIN, SUPER_ADMIN only
+   - Request Body: {
+       accountOrigin?: string,
+       documentStatus?: string,
+       customerType?: string,
+       targetStage: string,              // Required
+       matchAllOrigins?: boolean,        // Default: false
+       matchAllDocuments?: boolean,      // Default: false
+       matchAllCustomerTypes?: boolean,  // Default: false
+       isActive?: boolean,               // Default: true
+       priority?: number,                // Default: 0
+       description?: string
+     }
+   - Response: Created AccountFlowSettings object
+
+5. PUT /api/account-flow-settings/{id}
+   - Description: Update existing flow setting
+   - Authorization: ADMIN, SUPER_ADMIN only
+   - Request Body: Same as POST
+   - Response: Updated AccountFlowSettings object
+
+6. DELETE /api/account-flow-settings/{id}
+   - Description: Delete flow setting
+   - Authorization: ADMIN, SUPER_ADMIN only
+   - Response: 204 No Content
+
+7. PATCH /api/account-flow-settings/{id}/toggle
+   - Description: Toggle isActive status
+   - Authorization: ADMIN, SUPER_ADMIN only
+   - Response: Updated AccountFlowSettings object
+
+================================================================================
+UI REQUIREMENTS:
+================================================================================
+
+PAGE LAYOUT:
+1. Header
+   - Page title: "Account Flow Settings"
+   - Subtitle: "Configure automated routing rules for account approval workflows"
+   - "Create New Rule" button (visible only for ADMIN/SUPER_ADMIN)
+
+2. Main Content Area
+   - Data table showing all rules
+   - Filters: Active/Inactive/All toggle
+   - Search functionality (by description or any field)
+
+3. Table Columns (in order):
+   - Priority (sortable, badge showing number)
+   - Status (Active/Inactive toggle switch - ADMIN only)
+   - Account Origin (show badge or "ALL" if matchAllOrigins)
+   - Document Type (show badge or "ALL" if matchAllDocuments)
+   - Customer Type (show badge or "ALL" if matchAllCustomerTypes)
+   - Target Stage (PENDING or APPROVED with color coding)
+   - Description (truncate if long, show tooltip on hover)
+   - Actions (Edit, Delete buttons - ADMIN only)
+
+4. Create/Edit Modal Form Fields:
+   - Account Origin (dropdown with "Match All Origins" checkbox)
+   - Document Type (dropdown with "Match All Documents" checkbox)
+   - Customer Type (dropdown with "Match All Customer Types" checkbox)
+   - Target Stage (radio buttons: PENDING or APPROVED)
+   - Priority (number input, 0-999, with helper text)
+   - Description (textarea, optional)
+   - Active (toggle switch, default ON)
+
+================================================================================
+VALIDATION RULES:
+================================================================================
+
+Client-side Validation:
+1. At least ONE of the following must be true:
+   - A specific accountOrigin is selected OR matchAllOrigins is checked
+   - A specific documentStatus is selected OR matchAllDocuments is checked
+   - A specific customerType is selected OR matchAllCustomerTypes is checked
+
+2. Cannot select both a specific value AND its "match all" checkbox
+   - Example: Cannot select "FAYDA_PASS" AND check "Match All Origins"
+
+3. Target Stage is required (must be PENDING or APPROVED)
+
+4. Priority must be between 0 and 999
+
+5. When creating, check if similar rule exists (warn user about potential conflicts)
+
+Error Messages from Backend:
+- "Both accountOrigin and matchAllOrigins" → Show error
+- "A rule with this exact combination already exists" → Show error with suggestion to edit existing
+- "Target stage must be either PENDING or APPROVED" → Show error
+
+================================================================================
+UI/UX FEATURES:
+================================================================================
+
+1. Visual Priority Indication
+   - Use badge colors: High (>500) = Red, Medium (100-500) = Orange, Low (<100) = Blue
+   - Show "Highest Priority" label on the rule with highest priority
+
+2. Rule Preview/Testing
+   - Optional: Add a "Test Rule" section where user can input test values and see which rule would match
+
+3. Bulk Actions
+   - Select multiple rules to activate/deactivate at once
+   - Delete multiple rules at once (with confirmation)
+
+4. Rule Conflicts Warning
+   - When creating/editing, highlight if there are overlapping rules
+   - Show which rule has higher priority if overlap exists
+
+5. Examples/Help
+   - Include collapsible "Examples" section showing common use cases:
+     * "Auto-approve all FAYDA_PASS accounts"
+     * "Fast-track DIASPORA_WEB to PENDING"
+     * "Auto-approve INDIVIDUAL accounts with PASSPORT"
+
+6. Confirmation Dialogs
+   - Delete: "Are you sure you want to delete this rule? This action cannot be undone."
+   - Disable high-priority active rule: "This is a high-priority active rule. Are you sure you want to disable it?"
+
+7. Empty States
+   - No rules created: Show helpful message with "Create First Rule" CTA
+   - No active rules: Show message encouraging user to activate rules
+
+8. Loading States
+   - Show skeleton loaders while fetching data
+   - Show spinner on form submission
+
+9. Success/Error Notifications
+   - Toast notifications for all CRUD operations
+   - Clear error messages for validation failures
+
+================================================================================
+EXAMPLE USE CASES TO DEMONSTRATE:
+================================================================================
+
+Example 1: Auto-approve all FAYDA_PASS accounts
+{
+  accountOrigin: "FAYDA_PASS",
+  matchAllDocuments: true,
+  matchAllCustomerTypes: true,
+  targetStage: "APPROVED",
+  priority: 100,
+  description: "Auto-approve all FAYDA_PASS accounts regardless of document or customer type"
+}
+
+Example 2: Fast-track DIASPORA_WEB INDIVIDUAL accounts to PENDING
+{
+  accountOrigin: "DIASPORA_WEB",
+  matchAllDocuments: true,
+  customerType: "INDIVIDUAL",
+  targetStage: "PENDING",
+  priority: 75,
+  description: "Fast-track Diaspora Web individual accounts"
+}
+
+Example 3: Auto-approve any account with PASSPORT
+{
+  matchAllOrigins: true,
+  documentStatus: "PASSPORT",
+  matchAllCustomerTypes: true,
+  targetStage: "APPROVED",
+  priority: 50,
+  description: "Auto-approve all accounts verified with passport"
+}
+
+Example 4: Skip ORGANIZATION accounts to PENDING
+{
+  matchAllOrigins: true,
+  matchAllDocuments: true,
+  customerType: "ORGANIZATION",
+  targetStage: "PENDING",
+  priority: 60,
+  description: "All organization accounts go to PENDING for manual review"
+}
+
+================================================================================
+ACCESSIBILITY & RESPONSIVENESS:
+================================================================================
+
+1. Mobile Responsive
+   - Table should be scrollable on mobile
+   - Consider card layout for mobile instead of table
+   - Modal forms should be full-screen on mobile
+
+2. Accessibility
+   - All form inputs must have labels
+   - Use ARIA labels for icon buttons
+   - Ensure color contrast meets WCAG AA standards
+   - Keyboard navigation support
+
+3. Performance
+   - Paginate table if more than 50 rules
+   - Debounce search input
+   - Optimize re-renders
+
+================================================================================
+TECHNICAL STACK RECOMMENDATIONS:
+================================================================================
+
+- React/Vue/Angular (use whatever the existing portal uses)
+- Table component: AG-Grid, Material-UI DataGrid, or Ant Design Table
+- Form validation: React Hook Form, Formik, or Vuelidate
+- State management: Redux, Zustand, or Pinia (if needed)
+- HTTP client: Axios with interceptors for auth
+- Notifications: React-Toastify, Ant Design Message, or similar
+
+================================================================================
+SECURITY CONSIDERATIONS:
+================================================================================
+
+1. Role-based rendering
+   - Hide Create/Edit/Delete buttons for non-admin users
+   - Disable toggle switches for non-admin users
+
+2. API authorization handled by backend
+   - Frontend should still check roles to improve UX
+   - All write operations (POST/PUT/DELETE/PATCH) require ADMIN or SUPER_ADMIN
+
+3. Input sanitization
+   - Sanitize description field to prevent XSS
+   - Validate all enum values against allowed lists
+
+================================================================================
+ADDITIONAL NOTES:
+================================================================================
+
+1. The priority system ensures deterministic behavior when multiple rules could match
+2. Rules are evaluated in order of priority (highest first)
+3. The first matching rule wins
+4. Duplicate prevention is enforced at database level via unique constraint
+5. "Match All" flags provide flexibility without creating many similar rules
+6. The system is designed to be extended (more fields can be added later)
+
+================================================================================
+DELIVERABLES:
+================================================================================
+
+1. Responsive admin page for Account Flow Settings management
+2. Create/Edit modal form with validation
+3. Data table with sorting, filtering, and search
+4. Role-based access control (UI level)
+5. Error handling and user feedback
+6. Loading states and empty states
+7. Help/documentation section within the page
+8. Unit tests for validation logic (optional but recommended)
+
+================================================================================
+

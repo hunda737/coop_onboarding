@@ -1,0 +1,211 @@
+{
+    "accountsGroupedByAccountType": {
+        "Fixed Time Deposit Account": 8,
+        "Non-Repatriable Birr Account": 5,
+        "Deposit Account": 20,
+        "Diaspora Wadia Saving Account": 2
+    },
+    "districtStatisticsSummary": {
+        "accountsRegisterToOtherBranch": 4,
+        "agentCount": 0,
+        "accountsAddedByOtherBranchStaff": 44,
+        "approvedAccounts": 10,
+        "totalAccounts": 44,
+        "accountsByAgents": 0
+    },
+    "accountsGroupedByStatusAndMonthlyData": {
+        "PENDING": {
+            "totalData": 11,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 11,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "APPROVED": {
+            "totalData": 10,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 10,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "UNSETTLED": {
+            "totalData": 12,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 12,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "REJECTED": {
+            "totalData": 1,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 1,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "AUTHORIZED": {
+            "totalData": 0,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 0,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        },
+        "INITIAL": {
+            "totalData": 10,
+            "data": {
+                "MAY": 0,
+                "NOVEMBER": 10,
+                "APRIL": 0,
+                "JANUARY": 0,
+                "SEPTEMBER": 0,
+                "MARCH": 0,
+                "FEBRUARY": 0,
+                "OCTOBER": 0,
+                "DECEMBER": 0,
+                "JUNE": 0,
+                "AUGUST": 0,
+                "JULY": 0
+            }
+        }
+    },
+    "currentMonthTargetAchievements": [
+        {
+            "name": "New Accounts",
+            "achievements": 0,
+            "target": 100
+        },
+        {
+            "name": "Inactive Accounts",
+            "achievements": 0,
+            "target": 50
+        },
+        {
+            "name": "Agents",
+            "achievements": 0,
+            "target": 10
+        }
+    ],
+    "districtTargetAndAchievementsMonthly": [
+        {
+            "month": "JANUARY",
+            "registration": 0,
+            "target": 10
+        },
+        {
+            "month": "FEBRUARY",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "MARCH",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "APRIL",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "MAY",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "JUNE",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "JULY",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "AUGUST",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "SEPTEMBER",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "OCTOBER",
+            "registration": 0,
+            "target": 0
+        },
+        {
+            "month": "NOVEMBER",
+            "registration": 10,
+            "target": 100
+        },
+        {
+            "month": "DECEMBER",
+            "registration": 0,
+            "target": 100
+        }
+    ],
+    "eachBranchUsersAchievements": [
+        {
+            "userName": "MekeleBranchAC1",
+            "accountCount": 0,
+            "id": 755
+        },
+        {
+            "userName": "MekeleBranchAC2",
+            "accountCount": 0,
+            "id": 756
+        }
+    ]
+}

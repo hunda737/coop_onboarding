@@ -1,0 +1,75 @@
+#mycalendartest .fc-button {
+  background-color: #00adef !important;
+  color: white !important;
+  border: none;
+}
+
+#mycalendartest .fc-button:hover {
+  background-color: #0188bd !important;
+}
+
+.fc-toolbar-title {
+  color: #00adef;
+}
+
+#mycalendartest .fc-button.fc-button-active {
+  background-color: #025d82 !important;
+  color: white !important;
+  border: none;
+}
+
+#mycalendartest .event-category-work {
+  background-color: #00adef !important;
+  color: white !important;
+  border: none;
+}
+
+#mycalendartest .event-category-meeting {
+  background-color: #28a745 !important;
+  color: white !important;
+  border: none;
+}
+
+.event-category-holiday {
+  background-color: #dc3545 !important;
+  color: white !important;
+  border: none;
+}
+
+/* .fc-daygrid-event-harness {
+  background-color: #00adef !important;
+  color: white !important;
+  border: none;
+} */
+/* 
+const categoryColors: Record<string, string> = {
+  primary: "bg-cyan-200 text-cyan-700", // Softer cyan
+  danger: "bg-red-200 text-red-700", // Softer red
+  info: "bg-teal-200 text-teal-700", // Softer teal
+  warning: "bg-yellow-200 text-yellow-700", // Softer yellow
+  success: "bg-green-200 text-green-700", // Softer green
+}; */
+
+.event-category-danger {
+  background-color: #fca5a5 !important;
+  color: #b91c1c !important;
+}
+
+.event-category-success {
+  background-color: #a7f3d0 !important;
+  color: #065f46 !important;
+}
+
+.event-category-primary {
+  background-color: #67e8f9 !important;
+  color: #155e75 !important;
+}
+
+.event-category-warning {
+  background-color: #fde68a !important;
+  color: #92400e !important;
+}
+.event-category-info {
+  background-color: #5eead4 !important;
+  color: #134e4a !important;
+}
