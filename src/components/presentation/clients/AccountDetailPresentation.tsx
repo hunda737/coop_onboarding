@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   CheckCheck,
   HomeIcon,
-  MailIcon,
   PhoneIcon,
   X,
   Edit,
@@ -85,6 +84,26 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   const handleSaveChanges = async () => {
     await handleUpdateIndividualAccount(editedAccount);
     setIsEditDialogOpen(false);
+  };
+
+  // Helper function to format CBO date string (YYYYMMDD) to readable format
+  const formatCboDate = (dateStr: string | undefined): string => {
+    if (!dateStr || dateStr.length !== 8) return "";
+    try {
+      const year = dateStr.substring(0, 4);
+      const month = dateStr.substring(4, 6);
+      const day = dateStr.substring(6, 8);
+      return format(new Date(`${year}-${month}-${day}`), "MM/dd/yyyy");
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Helper function to check if values match
+  const valuesMatch = (val1: any, val2: any): boolean => {
+    if (val1 === val2) return true;
+    if (!val1 || !val2) return false;
+    return String(val1).toLowerCase().trim() === String(val2).toLowerCase().trim();
   };
 
   const renderActionButtons = () => {
@@ -227,16 +246,177 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
 
         </CardHeader>
 
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-          {/* Contact Info */}
-          <div className="space-y-4">
+        {/* CBO Account Comparison - Only show if account exists */}
+        {account?.haveCboAccount && account?.customerUserInfo && (
+          <CardContent className="border-t bg-blue-50/30 p-6">
+            <div className="mb-6">
+              <CardTitle className="text-xl font-bold text-gray-800 mb-2">
+                CBO Account Comparison
+              </CardTitle>
+              <p className="text-sm text-gray-600">
+                Compare the National id data with the existing CBO account data
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Current Onboarding Data - Only comparable fields */}
+              <div className="space-y-4 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between pb-3 border-b">
+                  <CardTitle className="text-lg font-semibold text-gray-800">
+                    National Id Data
+                  </CardTitle>
+                  <Badge variant="outline" className="bg-blue-50">NEW</Badge>
+                </div>
+
+                {/* Personal Information */}
+                <div className="space-y-3">
+                  <CardTitle className="text-base font-semibold text-gray-700">Personal Information</CardTitle>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.fullName, account?.customerUserInfo?.fullName) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.fullName || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Gender/Sex</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.sex, account?.customerUserInfo?.gender) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.sex || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
+                    <p className={`text-gray-700 ${!valuesMatch(
+                      account?.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyyMMdd") : "",
+                      account?.customerUserInfo?.dateOfBirthStr
+                    ) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.dateOfBirth ? format(new Date(account.dateOfBirth), "MM/dd/yyyy") : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="space-y-3 pt-4 border-t">
+                  <CardTitle className="text-base font-semibold text-gray-700">Address</CardTitle>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">City</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.zoneSubCity || account?.city, account?.customerUserInfo?.addressCity) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.zoneSubCity || account?.city || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Country</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.country, account?.customerUserInfo?.addressCountry) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.country || "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* CBO Account Data - Only comparable fields */}
+              <div className="space-y-4 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center justify-between pb-3 border-b">
+                  <CardTitle className="text-lg font-semibold text-gray-800">
+                    CBO Account Data
+                  </CardTitle>
+                  <Badge variant="outline" className="bg-green-50">EXISTING</Badge>
+                </div>
+
+                {/* Personal Information */}
+                <div className="space-y-3">
+                  <CardTitle className="text-base font-semibold text-gray-700">Personal Information</CardTitle>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.fullName, account?.customerUserInfo?.fullName) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.customerUserInfo?.fullName || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Gender</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.sex, account?.customerUserInfo?.gender) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.customerUserInfo?.gender || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
+                    <p className={`text-gray-700 ${!valuesMatch(
+                      account?.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyyMMdd") : "",
+                      account?.customerUserInfo?.dateOfBirthStr
+                    ) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.customerUserInfo?.dateOfBirthStr ? formatCboDate(account.customerUserInfo.dateOfBirthStr) : "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Address Information */}
+                <div className="space-y-3 pt-4 border-t">
+                  <CardTitle className="text-base font-semibold text-gray-700">Address</CardTitle>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">City</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.zoneSubCity || account?.city, account?.customerUserInfo?.addressCity) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.customerUserInfo?.addressCity || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase">Country</p>
+                    <p className={`text-gray-700 ${!valuesMatch(account?.country, account?.customerUserInfo?.addressCountry) ? "font-semibold text-orange-600" : ""}`}>
+                      {account?.customerUserInfo?.addressCountry || "N/A"}
+                    </p>
+                  </div>
+                </div>
+
+
+                {/* External Accounts - Only show if CBO account exists */}
+                <div className="space-y-3 p-2">
+                  {account?.haveCboAccount && account?.customerUserInfo?.externalAccounts && account.customerUserInfo.externalAccounts.length > 0 && (
+                    <CardContent className="border-t">
+                      <CardTitle className="text-lg font-semibold text-gray-800 mb-4">
+                        External Accounts (CBO)
+                      </CardTitle>
+                      <div className="">
+                        {account.customerUserInfo.externalAccounts.map((extAccount) => (
+                          <div key={extAccount.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <p className="font-medium text-gray-700 mb-2">{extAccount.accountTitle}</p>
+                            <div className="space-y-1 text-sm">
+                              <p className="text-gray-600"><span className="font-medium">Account:</span> {extAccount.accountNumber}</p>
+                              <p className="text-gray-600"><span className="font-medium">Branch:</span> {extAccount.branchName}</p>
+                              <p className="text-gray-500 text-xs"><span className="font-medium">Co Code:</span> {extAccount.coCode}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        )}
+
+        {/* Additional Account Details - Always shown below comparison or as main content */}
+        <CardContent className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 p-6 ${account?.haveCboAccount ? 'border-t' : ''}`}>
+          {/* Personal Information */}
+          <div className="space-y-6">
+            <CardTitle className="text-lg font-semibold text-gray-800">
+              Personal Information
+            </CardTitle>
+            <p className="text-gray-700">Full Name: {account?.fullName}</p>
+            <p className="text-gray-700">Surname: {account?.surname}</p>
+            <p className="text-gray-700">Mother's Name: {account?.motherName}</p>
+            <p className="text-gray-700">Sex: {account?.sex}</p>
+            <p className="text-gray-700">
+              Date of Birth:{" "}
+              {account?.dateOfBirth && format(new Date(account.dateOfBirth), "MM/dd/yyyy")}
+            </p>
+            <p className="text-gray-700">Customer Type: {account?.customerType}</p>
+            <p className="text-gray-700">Title: {account?.title}</p>
+            <p className="text-gray-700">House No: {account?.houseNo}</p>
+          </div>
+
+          {/* Contact & Address Information */}
+          <div className="space-y-6">
             <CardTitle className="text-lg font-semibold text-gray-800">
               Contact Information
             </CardTitle>
-            <div className="flex items-center space-x-2">
-              <MailIcon className="h-5 w-5 text-gray-400" />
-              <p className="text-gray-700">{account?.emailVerified}</p>
-            </div>
             <div className="flex items-center space-x-2">
               <PhoneIcon className="h-5 w-5 text-gray-400" />
               <p className="text-gray-700">{account?.phone}</p>
@@ -247,11 +427,8 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             >
               Email Verified: {account?.emailVerified ? "Yes" : "No"}
             </Badge>
-          </div>
 
-          {/* Address */}
-          <div className="space-y-4">
-            <CardTitle className="text-lg font-semibold text-gray-800">
+            <CardTitle className="text-lg font-semibold text-gray-800 mt-6">
               Address
             </CardTitle>
             <div className="flex items-center space-x-2">
@@ -262,26 +439,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
               {account?.zoneSubCity}, {account?.state} {account?.zipCode}
             </p>
             <p className="text-gray-500">{account?.country}</p>
-          </div>
-
-          {/* Personal Info */}
-          <div className="space-y-4">
-            <CardTitle className="text-lg font-semibold text-gray-800">
-              Personal Information
-            </CardTitle>
-            <p className="text-gray-700">Surname: {account?.surname}</p>
-            <p className="text-gray-700">Mother's Name: {account?.motherName}</p>
             <p className="text-gray-700">Occupation: {account?.occupation}</p>
-            <p className="text-gray-700">Sex: {account?.sex}</p>
-            <p className="text-gray-700">
-              Date of Birth:{" "}
-              {account?.dateOfBirth && format(new Date(account.dateOfBirth), "MM/dd/yyyy")}
-            </p>
-            <p className="text-gray-700">Customer Type: {account?.customerType}</p>
-            <p className="text-gray-700">Title: {account?.title}</p>
-            <p className="text-gray-700">House No: {account?.houseNo}</p>
           </div>
         </CardContent>
+
 
         {/* Financial and Employer Info */}
         <CardContent className="grid border-t grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
