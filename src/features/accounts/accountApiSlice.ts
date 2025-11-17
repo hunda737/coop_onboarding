@@ -75,6 +75,26 @@ export interface IndividualAccount extends BaseAccount {
   residenceCardBack: string;
   residenceCard: string;
   clientId: string;
+  haveCboAccount?: boolean;
+  customerUserInfo?: {
+    id: number;
+    fullName: string;
+    gender: string;
+    dateOfBirthStr: string;
+    addressCountry: string;
+    addressCity: string;
+    externalAccounts: Array<{
+      id: number;
+      accountNumber: string;
+      accountTitle: string;
+      coCode: string;
+      branchName: string;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    createdAt: string;
+    updatedAt: string;
+  };
 }
 
 interface JointCustomerInfo {

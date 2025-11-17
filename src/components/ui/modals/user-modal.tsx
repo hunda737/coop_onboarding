@@ -32,9 +32,9 @@ import { Client } from "@/features/client/clientApiSlice";
 
 // Zod schema
 const formSchema = z.object({
-  fullName: z.string().min(1),
+  // fullName: z.string().min(1),
   email: z.string().default(""),
-  password: z.string().default(""),
+  // password: z.string().default(""),
   roleId: z.string(),
   clientId: z.coerce.number().optional(),
   mainBranchId: z.string(),
@@ -65,9 +65,9 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: "",
+      // fullName: "",
       email: "",
-      password: "",
+      // password: "",
       roleId: "",
       mainBranchId: "",
       branchIds: [],
@@ -99,9 +99,9 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
       setLoading(true);
 
       const response = await createUser({
-        fullName: values.fullName,
+        // fullName: values.fullName,
         email: values.email,
-        password: values.password,
+        // password: values.password,
         roleId: Number(values.roleId),
         mainBranchId: Number(values.mainBranchId),
         clientId: clientId || Number(localStorage.getItem("clientId")),
@@ -136,7 +136,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             {/* Full Name */}
-            <FormField
+            {/* <FormField
               name="fullName"
               control={form.control}
               render={({ field }) => (
@@ -148,7 +148,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             {/* Email */}
             <FormField
               name="email"
@@ -164,7 +164,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
               )}
             />
             {/* Password */}
-            <FormField
+            {/* <FormField
               name="password"
               control={form.control}
               render={({ field }) => (
@@ -180,7 +180,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
             {/* Role Select */}
             <FormField
               control={form.control}

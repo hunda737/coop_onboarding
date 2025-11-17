@@ -30,9 +30,9 @@ interface User {
 }
 
 type UserRequest = {
-  fullName: string;
+  fullName?: string;
   email: string;
-  password: string;
+  password?: string;
   roleId: number;
   clientId: number;
   branchIds: number[] | [];
