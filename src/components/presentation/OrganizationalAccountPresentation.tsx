@@ -19,6 +19,7 @@ import {
   HomeIcon,
   Loader2,
   ZoomIn,
+  File,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -79,7 +80,15 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
   const [rejectionReason, setRejectionReason] = useState("");
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
+  const [isPdf, setIsPdf] = useState<boolean>(false);
   const settleModal = useSettleModal();
+
+  // Helper function to check if URL is a PDF
+  const isPdfFile = (url: string): boolean => {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
+  };
 
   // Loading states for buttons
   const [loadingStates, setLoadingStates] = useState({
@@ -402,6 +411,129 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
           </div>
         </CardContent>
 
+        {/* Organizational Documents Section */}
+        {((account as any)?.letterOfRequest || (account as any)?.tradeLicense || (account as any)?.articlesOfAssociation) && (
+          <CardContent className="p-6 border-t">
+            <CardTitle className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <FileTextIcon className="mr-2 h-5 w-5" />
+              Organizational Documents
+            </CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {(account as any)?.letterOfRequest && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Letter of Request</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).letterOfRequest) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).letterOfRequest} 
+                        alt="Letter of Request" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).letterOfRequest);
+                          setZoomedImageTitle(`${account?.companyName} - Letter of Request`);
+                          setIsPdf(isPdfFile((account as any).letterOfRequest));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).letterOfRequest) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {(account as any)?.tradeLicense && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Trade License</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).tradeLicense) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).tradeLicense} 
+                        alt="Trade License" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).tradeLicense);
+                          setZoomedImageTitle(`${account?.companyName} - Trade License`);
+                          setIsPdf(isPdfFile((account as any).tradeLicense));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).tradeLicense) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {(account as any)?.articlesOfAssociation && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Articles of Association</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).articlesOfAssociation) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).articlesOfAssociation} 
+                        alt="Articles of Association" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).articlesOfAssociation);
+                          setZoomedImageTitle(`${account?.companyName} - Articles of Association`);
+                          setIsPdf(isPdfFile((account as any).articlesOfAssociation));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).articlesOfAssociation) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
+
         {/* Authorized Representatives Section */}
         {account?.customersInfo && account.customersInfo.length > 0 && (
           <CardContent className="p-6 border-t">
@@ -418,7 +550,9 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                       {/* Name Header */}
                       <div className="flex items-center space-x-2 pb-3 border-b">
                         <User className="h-5 w-5 text-gray-400" />
-                        <p className="font-semibold text-gray-800 text-lg">{customer.fullName}</p>
+                        <p className="font-semibold text-gray-800 text-lg">
+                          {customer.fullName} {(extendedCustomer as any).surname && (extendedCustomer as any).surname}
+                        </p>
                       </div>
                       
                       {/* Main Content Grid */}
@@ -444,6 +578,21 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                             <PhoneIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
                             <p className="text-gray-700 text-sm">{customer.phone || "N/A"}</p>
                           </div>
+                          {(extendedCustomer as any).state && (
+                            <p className="text-gray-700 text-sm">
+                              State: {(extendedCustomer as any).state}
+                            </p>
+                          )}
+                          {(extendedCustomer as any).country && (
+                            <p className="text-gray-700 text-sm">
+                              Country: {(extendedCustomer as any).country}
+                            </p>
+                          )}
+                          {(extendedCustomer as any).zoneSubCity && (
+                            <p className="text-gray-700 text-sm">
+                              Zone/Sub City: {(extendedCustomer as any).zoneSubCity}
+                            </p>
+                          )}
                         </div>
 
                         {/* Personal Details */}
@@ -463,6 +612,16 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                                   DOB: {format(new Date(extendedCustomer.dateOfBirth), "MM/dd/yyyy")}
                                 </p>
                               </div>
+                            )}
+                            {(extendedCustomer as any).sex && (
+                              <p className="text-gray-700 text-sm">
+                                Gender: {(extendedCustomer as any).sex}
+                              </p>
+                            )}
+                            {(extendedCustomer as any).documentName && (
+                              <p className="text-gray-700 text-sm">
+                                Document Type: {(extendedCustomer as any).documentName}
+                              </p>
                             )}
                           </div>
                         )}
@@ -492,22 +651,29 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                       </div>
 
                       {/* Photos and Signatures */}
-                      {((extendedCustomer as any).photo || (extendedCustomer as any).signature) && (
+                      {((extendedCustomer as any).photo || (extendedCustomer as any).signature || (extendedCustomer as any).residenceCard || (extendedCustomer as any).residenceCardBack) && (
                         <div className="mt-4 pt-4 border-t">
                           <p className="font-medium text-gray-700 text-sm mb-2">Documents</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {(extendedCustomer as any).photo && (
                               <div className="relative group">
                                 <p className="text-gray-600 text-sm font-medium mb-2">Photo</p>
                                 <div className="relative w-32 h-32">
-                                  <img 
-                                    src={(extendedCustomer as any).photo} 
-                                    alt="Customer photo" 
-                                    className="w-full h-full object-cover rounded border"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                  />
+                                  {isPdfFile((extendedCustomer as any).photo) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).photo} 
+                                      alt="Customer photo" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
                                     <Button
                                       size="sm"
@@ -516,10 +682,11 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                                       onClick={() => {
                                         setZoomedImage((extendedCustomer as any).photo);
                                         setZoomedImageTitle(`${customer.fullName} - Photo`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).photo));
                                       }}
                                     >
                                       <ZoomIn className="h-4 w-4 mr-2" />
-                                      Zoom
+                                      {isPdfFile((extendedCustomer as any).photo) ? 'View' : 'Zoom'}
                                     </Button>
                                   </div>
                                 </div>
@@ -529,14 +696,21 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                               <div className="relative group">
                                 <p className="text-gray-600 text-sm font-medium mb-2">Signature</p>
                                 <div className="relative w-32 h-32">
-                                  <img 
-                                    src={(extendedCustomer as any).signature} 
-                                    alt="Customer signature" 
-                                    className="w-full h-full object-contain rounded border bg-white"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
-                                    }}
-                                  />
+                                  {isPdfFile((extendedCustomer as any).signature) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).signature} 
+                                      alt="Customer signature" 
+                                      className="w-full h-full object-contain rounded border bg-white"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
                                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
                                     <Button
                                       size="sm"
@@ -545,10 +719,85 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
                                       onClick={() => {
                                         setZoomedImage((extendedCustomer as any).signature);
                                         setZoomedImageTitle(`${customer.fullName} - Signature`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).signature));
                                       }}
                                     >
                                       <ZoomIn className="h-4 w-4 mr-2" />
-                                      Zoom
+                                      {isPdfFile((extendedCustomer as any).signature) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).residenceCard && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Residence Card (Front)</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).residenceCard) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).residenceCard} 
+                                      alt="Residence card front" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).residenceCard);
+                                        setZoomedImageTitle(`${customer.fullName} - Residence Card (Front)`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).residenceCard));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).residenceCard) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).residenceCardBack && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Residence Card (Back)</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).residenceCardBack) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).residenceCardBack} 
+                                      alt="Residence card back" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).residenceCardBack);
+                                        setZoomedImageTitle(`${customer.fullName} - Residence Card (Back)`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).residenceCardBack));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).residenceCardBack) ? 'View' : 'Zoom'}
                                     </Button>
                                   </div>
                                 </div>
@@ -577,22 +826,37 @@ const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPre
           </CardContent>
         )}
 
-        {/* Image Zoom Dialog */}
-        <Dialog open={!!zoomedImage} onOpenChange={(open) => !open && setZoomedImage(null)}>
+        {/* Image/PDF Zoom Dialog */}
+        <Dialog open={!!zoomedImage} onOpenChange={(open) => {
+          if (!open) {
+            setZoomedImage(null);
+            setIsPdf(false);
+          }
+        }}>
           <DialogContent className="max-w-4xl max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>{zoomedImageTitle}</DialogTitle>
             </DialogHeader>
             <div className="flex items-center justify-center p-4">
               {zoomedImage && (
-                <img 
-                  src={zoomedImage} 
-                  alt={zoomedImageTitle}
-                  className="max-w-full max-h-[70vh] object-contain rounded"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none';
-                  }}
-                />
+                <>
+                  {isPdf ? (
+                    <iframe
+                      src={zoomedImage}
+                      className="w-full h-[70vh] rounded border"
+                      title={zoomedImageTitle}
+                    />
+                  ) : (
+                    <img 
+                      src={zoomedImage} 
+                      alt={zoomedImageTitle}
+                      className="max-w-full max-h-[70vh] object-contain rounded"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                </>
               )}
             </div>
           </DialogContent>
