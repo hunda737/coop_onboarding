@@ -63,6 +63,16 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   const [editedAccount, setEditedAccount] = useState<Partial<IndividualAccount>>({});
   const settleModal = useSettleModal();
 
+  // Loading states for buttons
+  const [loadingStates, setLoadingStates] = useState({
+    verify: false,
+    authorize: false,
+    approve: false,
+    reject: false,
+    reverseAuthorization: false,
+    settle: false,
+  });
+
   const confirmRejection = () => {
     handleRejectClick(rejectionReason);
     setIsRejectDialogOpen(false);
@@ -106,6 +116,15 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
     return String(val1).toLowerCase().trim() === String(val2).toLowerCase().trim();
   };
 
+  const handleButtonClick = async (action: string, callback: () => Promise<void>) => {
+    setLoadingStates((prev) => ({ ...prev, [action]: true }));
+    try {
+      await callback();
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [action]: false }));
+    }
+  };
+
   const renderActionButtons = () => {
     if (!account || !currentUser) return null;
 
@@ -140,9 +159,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-yellow-500 hover:bg-yellow-600 text-white"
             size="sm"
-            onClick={handleVerifyAccount}
+            onClick={() => handleButtonClick("verify", handleVerifyAccount)}
+            disabled={loadingStates.verify}
           >
-            Verify Account
+            {loadingStates.verify ? "Verifying..." : "Verify Account"}
           </Button>
         )}
 
@@ -150,9 +170,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-cyan-500"
             size="sm"
-            onClick={() => handleAuthorizeAccount(account.accountId)}
+            onClick={() => handleButtonClick("authorize", () => handleAuthorizeAccount(account.accountId))}
+            disabled={loadingStates.authorize}
           >
-            Authorize
+            {loadingStates.authorize ? "Authorizing..." : "Authorize"}
           </Button>
         )}
 
@@ -163,6 +184,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
               size="sm"
               variant="destructive"
               onClick={() => setIsRejectDialogOpen(true)}
+              disabled={loadingStates.reject}
             >
               <X className="mr-2 h-4 w-4" />
               Reject
@@ -170,9 +192,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             <Button
               className="border bg-cyan-500"
               size="sm"
-              onClick={handleApproveClick}
+              onClick={() => handleButtonClick("approve", handleApproveClick)}
+              disabled={loadingStates.approve}
             >
-              Approve
+              {loadingStates.approve ? "Approving..." : "Approve"}
             </Button>
           </>
         )}
@@ -181,9 +204,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-cyan-500"
             size="sm"
-            onClick={() => handleReverseAuthorization(account.id)}
+            onClick={() => handleButtonClick("reverseAuthorization", () => handleReverseAuthorization(account.id))}
+            disabled={loadingStates.reverseAuthorization}
           >
-            Reverse Authorization
+            {loadingStates.reverseAuthorization ? "Reversing..." : "Reverse Authorization"}
           </Button>
         )}
 
@@ -193,11 +217,13 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             size="sm"
             variant="secondary"
             onClick={() => {
-              settleModal.onOpen();
+              handleButtonClick("settle", async () => {
+                settleModal.onOpen();
+              });
             }}
+            disabled={loadingStates.settle}
           >
-            <CheckCheck className="mr-2 h-4 w-4" />
-            Settle
+            {loadingStates.settle ? "Settling..." : "Settle"}
           </Button>
         )}
       </div>

@@ -71,24 +71,6 @@ const OrganizationalAccountDetailContainer = () => {
     }
   };
 
-  const handleAuthorizeAccount = async () => {
-    if (!account?.accountId) {
-      toast.error("Account ID is missing.");
-      return;
-    }
-    if (!account?.accountNumber || !account?.customerId) {
-      toast.error("Cannot authorize. Account must be verified first.");
-      return;
-    }
-    try {
-      await authorizeAccount({ accountId: account.accountId }).unwrap();
-      toast.success("Account Authorized.");
-      window.location.reload();
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Unexpected error occurred.");
-    }
-  };
-
   const handleApproveClick = async () => {
     if (!account?.accountId) {
       toast.error("Account ID is missing.");
@@ -125,17 +107,27 @@ const OrganizationalAccountDetailContainer = () => {
     }
   };
 
-  const handleReverseAuthorization = async () => {
-    if (!account?.accountId) {
-      toast.error("Account ID is missing.");
-      return;
-    }
+  const handleReverseAuthorization = async (accountId: number) => {
     try {
-      await reverseAuthorization({ accountId: account.accountId }).unwrap();
+      await reverseAuthorization({ accountId }).unwrap();
       toast.success("Authorization Reversed.");
       window.location.reload();
     } catch (error: any) {
       toast.error(error?.data?.message || "Error reversing authorization.");
+    }
+  };
+
+  const handleAuthorizeAccount = async (accountId: number) => {
+    if (!account?.accountNumber || !account?.customerId) {
+      toast.error("Cannot authorize. Account must be verified first.");
+      return;
+    }
+    try {
+      await authorizeAccount({ accountId }).unwrap();
+      toast.success("Account Authorized.");
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Unexpected error occurred.");
     }
   };
 
@@ -144,25 +136,14 @@ const OrganizationalAccountDetailContainer = () => {
 
   return (
     <OrganizationalAccountDetailPresentation
-      account={
-        account
-          ? {
-              ...account,
-              customersInfo: account.customersInfo?.map((c) => ({
-                ...c,
-                id: String(c.id), // Convert id: number → string
-              })),
-            }
-          : undefined
-      }
+      account={account}
       currentUser={currentUser}
-      onBack={() => navigate(-1)}
-      onVerify={handleVerifyAccount}
-      onApprove={handleApproveClick}
-      onReject={handleRejectAccount}
-      onUpdateStatus={handleUpdateAccountStatus}
-      onAuthorize={handleAuthorizeAccount}
-      onReverseAuthorization={handleReverseAuthorization}
+      handleApproveClick={handleApproveClick}
+      handleRejectClick={handleRejectAccount}
+      handleReverseAuthorization={handleReverseAuthorization}
+      handleUpdateAccountStatus={handleUpdateAccountStatus}
+      handleAuthorizeAccount={handleAuthorizeAccount}
+      handleVerifyAccount={handleVerifyAccount}
     />
   );
 };
