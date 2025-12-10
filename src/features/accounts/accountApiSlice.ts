@@ -545,6 +545,20 @@ export const accountApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
+    updateCustomerInfo: builder.mutation<
+      any,
+      { accountId: number }
+    >({
+      query: ({ accountId }) => ({
+        url: `/api/v1/accounts/update-customer-info/${accountId}`,
+        method: "PUT",
+      }),
+      invalidatesTags: (_, __, { accountId }) => [
+        { type: "Accounts", id: accountId },
+        { type: "Accounts", id: "LIST" },
+      ],
+    }),
+
   }),
 });
 
@@ -568,7 +582,8 @@ export const {
   useAuthorizeAccountMutation,
   useRejectAuthorizationMutation,
   useApproveAccountMutation,
-  useGetAllAccountsQuery
+  useGetAllAccountsQuery,
+  useUpdateCustomerInfoMutation
 } = accountApiSlice;
 
 export type { Approval, HeadersPageInfo };
