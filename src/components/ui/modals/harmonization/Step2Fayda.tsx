@@ -182,9 +182,10 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
             <div>
               <p className="text-sm font-semibold mb-1" style={{ color: "#0db0f1" }}>National ID Verification Required</p>
               <p className="text-sm text-gray-700 leading-relaxed">
-                To open your individual account, we need to verify your identity using your
-                National ID (Fayda). This process is secure and will pre-fill your personal
-                information for faster account opening.
+                To harmonize your account data, we need to verify your identity using your
+                National ID (Fayda). This process is secure and will allow us to match and 
+                synchronize your account information with your National ID data for accurate 
+                harmonization.
               </p>
             </div>
           </div>
@@ -192,24 +193,24 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Benefits</CardTitle>
+            <CardTitle className="text-lg">Why National ID Verification Is Required</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              <span>Instant identity verification</span>
+              <span>Accurate identity matching</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              <span>Pre-filled personal information</span>
+              <span>Validation of customer information</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              <span>Faster account activation</span>
+              <span>Prevention of duplication and fraud</span>
             </div>
             <div className="flex items-start gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
-              <span>Enhanced security</span>
+              <span>Improved data integrity and security</span>
             </div>
           </CardContent>
         </Card>
