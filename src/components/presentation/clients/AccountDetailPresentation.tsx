@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  CheckCheck,
   HomeIcon,
   PhoneIcon,
   X,
   Edit,
+  GitMerge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -420,12 +420,16 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             </div>
 
             {/* add button to merge the infomration */}
-            <div className="flex items-center justify-center py-4">
+            <div className="flex flex-col items-center justify-center py-4 space-y-3">
+              <p className="text-sm text-gray-600 text-center max-w-md">
+                This will merge customer data from Fayda to Core Banking, replacing existing customer information in the core banking system.
+              </p>
               <Button 
-                className="border bg-cyan-500" 
+                className="border bg-cyan-500 hover:bg-cyan-600" 
                 size="sm"
                 onClick={() => setIsMergeDialogOpen(true)}
               >
+                <GitMerge className="mr-2 h-4 w-4" />
                 Merge Information
               </Button>
             </div>
