@@ -51,6 +51,7 @@ import ResetPassword from "@/pages/client/ResetPassword";
 import ChangePassword from "@/pages/client/ChangePassword";
 import FlowSettingsPage from "@/pages/client/FlowSettings";
 import HarmonizationPage from "@/pages/client/Harmonization";
+import HarmonizationDetailPage from "@/pages/client/HarmonizationDetail";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -287,6 +288,10 @@ const router = createBrowserRouter(
       {createProtectedRoute({
         path: "/harmonization",
         element: <HarmonizationPage />,
+      })}
+      {createProtectedRoute({
+        path: "/harmonization/:id",
+        element: <HarmonizationDetailPage />,
       })}
       {createProtectedRoute({
         path: "/crm-settings",

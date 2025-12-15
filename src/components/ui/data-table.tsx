@@ -212,11 +212,37 @@ export function DataTable<TData, TValue>({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row: any) => (
+            table.getRowModel().rows.map((row: any) => {
+              const getNavigationPath = () => {
+                const id = (row.original as any).id;
+                const accountId = (row.original as any).accountId;
+                
+                // Handle different types with their specific routes
+                if (type === "harmonization") {
+                  return `/harmonization/${id}`;
+                }
+                if (type === "account") {
+                  // Use accountId if available, otherwise use id
+                  const finalId = accountId || id;
+                  // Check customer type for routing
+                  const customerType = (row.original as any).customerType?.toLowerCase();
+                  if (customerType === "joint") {
+                    return `/joint-accounts/${finalId}`;
+                  }
+                  if (customerType === "organization") {
+                    return `/organizational-accounts/${finalId}`;
+                  }
+                  return `/accounts/${finalId}`;
+                }
+                // Default: return as string for relative navigation
+                return String(id);
+              };
+              
+              return (
               <TableRow
                 key={row.id}
-                className={`${clickable && "cursor-pointer"}`}
-                onClick={() => clickable && navigate((row.original as any).id)}
+                className={`${clickable && "cursor-pointer hover:bg-muted/50"}`}
+                onClick={() => clickable && navigate(getNavigationPath())}
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell: any) => (
@@ -225,7 +251,8 @@ export function DataTable<TData, TValue>({
                   </TableCell>
                 ))}
               </TableRow>
-            ))
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">

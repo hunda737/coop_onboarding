@@ -13,6 +13,7 @@ import InactiveAccountDetailContainer from "./InactiveAccountDetailContainer";
 import RtgsContainer from "./RtgsContainer";
 import FlowSettingsContainer from "./FlowSettingsContainer";
 import HarmonizationContainer from "./HarmonizationContainer";
+import HarmonizationDetailContainer from "./HarmonizationDetailContainer";
 
 export {
   AccountContainer,
@@ -30,4 +31,5 @@ export {
   RtgsContainer,
   FlowSettingsContainer,
   HarmonizationContainer,
+  HarmonizationDetailContainer,
 };
