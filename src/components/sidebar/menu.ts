@@ -5,6 +5,7 @@ import {
   LucideWorkflow,
   // Notebook,
   Settings2,
+  Shuffle,
   // ShieldAlert,
   SquareUserRound,
   Target,
@@ -78,6 +79,11 @@ const sidebarMenu = {
       url: "/accounts",
       icon: BookUser,
     },
+    {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Shuffle,
+    },
     // {
     //   title: "Inactive Accounts",
     //   url: "/inactive",
@@ -115,6 +121,11 @@ const sidebarMenu = {
       url: "/accounts",
       icon: BookUser,
     },
+    {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Shuffle,
+    },
 
     // {
     //   title: "Inactive Accounts",
@@ -147,6 +158,11 @@ const sidebarMenu = {
       title: "Accounts",
       url: "/accounts",
       icon: BookUser,
+    },
+    {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Shuffle,
     },
     // {
     //   title: "Organization Account",
