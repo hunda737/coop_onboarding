@@ -105,12 +105,11 @@ const sidebarMenu = {
     // },
   ],
   "ACCOUNT-APPROVER": [
-    // {
-    //   title: "Dashboard",
-    //   url: "/",
-    //   icon: LayoutDashboard,
-    // },
-
+    {
+      title: "Dashboard",
+      url: "/",
+      icon: LayoutDashboard,
+    },
     {
       title: "Accounts",
       url: "/accounts",

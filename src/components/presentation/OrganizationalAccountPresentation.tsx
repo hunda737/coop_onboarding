@@ -1,332 +1,916 @@
-import React from "react";
+import { FC, useState } from "react";
+import { OrganizationalAccount } from "@/features/accounts/accountApiSlice";
 import { format } from "date-fns";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  Building2,
   MailIcon,
   PhoneIcon,
-  UserIcon,
-  
-  ArrowLeftIcon,
-  CheckIcon,
-  XIcon,
-  ShieldCheckIcon,
-  ShieldOffIcon,
-  RefreshCwIcon,
-  Building2Icon,
-  FileTextIcon,
-  LandmarkIcon,
+  User,
+  CalendarIcon,
+  BriefcaseIcon,
+  DollarSignIcon,
   MapPinIcon,
+  LandmarkIcon,
+  FileTextIcon,
+  X,
+  CheckCheck,
+  HomeIcon,
+  Loader2,
+  ZoomIn,
+  File,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { useNavigate } from "react-router-dom";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useSettleModal } from "@/hooks/use-settle-modal";
+import { SettleModal } from "@/components/ui/modals/settle-modal";
+import { isRoleAuthorized } from "@/types/authorities";
+import { User as CurrentUser } from "@/features/user/userApiSlice";
 
-interface OrganizationalCustomerInfo {
-  id: string;
+type OrganizationalAccountDetailPresentationProps = {
+  account: OrganizationalAccount | undefined;
+  handleApproveClick: () => void;
+  handleRejectClick: (rejectionReason: string) => void;
+  handleReverseAuthorization: (accountId: number) => Promise<void>;
+  handleUpdateAccountStatus: (status: string) => Promise<void>;
+  handleAuthorizeAccount: (accountId: number) => Promise<void>;
+  handleVerifyAccount: () => Promise<void>;
+  currentUser: CurrentUser | undefined;
+};
+
+// Extended interface for customer info that may have additional fields
+interface ExtendedCustomerInfo {
+  id: number | string;
   fullName: string;
   email: string;
+  emailVerified?: boolean;
   phone: string;
-}
-
-interface OrganizationalAccount {
-  accountNumber?: string;
-  accountType?: string;
-  status?: string;
-  addedByFullName?: string;
-  addedByRole?: string;
-  customersInfo?: OrganizationalCustomerInfo[];
-  accountId?: number;
-  initialDeposit?: number;
-  branch?: string;
-  currency?: string;
+  dateOfBirth?: string;
+  title?: string;
+  issueAuthority?: string;
+  issueDate?: string;
+  expirayDate?: string;
+  haveCboAccount?: boolean;
+  percentageComplete?: number;
   createdAt?: string;
   updatedAt?: string;
-  companyName?: string;
-  companyEmail?: string;
-  companyPhoneNumber?: string;
-  companyTinNumber?: string;
-  companyTarget?: string;
-  companyResidence?: string;
-  companyState?: string;
-  companyZone?: string;
-  companySubCity?: string;
-  companyWoreda?: string;
 }
 
-interface OrganizationalAccountDetailPresentationProps {
-  account?: OrganizationalAccount;
-  currentUser?: any;
-  onBack?: () => void;
-  onVerify?: () => void;
-  onApprove?: () => void;
-  onReject?: (reason: string) => void;
-  onUpdateStatus?: (status: string) => void;
-  onAuthorize?: () => void;
-  onReverseAuthorization?: () => void;
-}
-
-const statusOptions = [
-  { value: "PENDING", label: "Pending" },
-  { value: "REGISTERED", label: "Registered" },
-  { value: "VERIFIED", label: "Verified" },
-  { value: "AUTHORIZED", label: "Authorized" },
-  { value: "APPROVED", label: "Approved" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "UNSETTLED", label: "Unsettled" },
-  { value: "SETTLED", label: "Settled" },
-];
-
-const OrganizationalAccountDetailPresentation: React.FC<OrganizationalAccountDetailPresentationProps> = ({
+const OrganizationalAccountDetailPresentation: FC<OrganizationalAccountDetailPresentationProps> = ({
   account,
-
-  onBack,
-  onVerify,
-  onApprove,
-  onReject,
-  onUpdateStatus,
-  onAuthorize,
-  onReverseAuthorization,
+  handleRejectClick,
+  handleApproveClick,
+  handleReverseAuthorization,
+  handleAuthorizeAccount,
+  handleVerifyAccount,
+  currentUser,
 }) => {
-  const [rejectionReason, setRejectionReason] = React.useState("");
-  const [, setSelectedStatus] = React.useState(account?.status || "");
+  const navigate = useNavigate();
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
+  const [isPdf, setIsPdf] = useState<boolean>(false);
+  const settleModal = useSettleModal();
 
-  if (!account) return <p>No Organizational Account found.</p>;
+  // Helper function to check if URL is a PDF
+  const isPdfFile = (url: string): boolean => {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
+  };
 
-  const handleStatusChange = (status: string) => {
-    setSelectedStatus(status);
-    if (onUpdateStatus) {
-      onUpdateStatus(status);
+  // Loading states for buttons
+  const [loadingStates, setLoadingStates] = useState({
+    verify: false,
+    authorize: false,
+    approve: false,
+    reject: false,
+    reverseAuthorization: false,
+    settle: false,
+  });
+
+  if (!account) {
+    return <div className="flex w-full justify-center p-6">No Organizational Account found.</div>;
+  }
+
+  const confirmRejection = async () => {
+    try {
+      await handleRejectClick(rejectionReason);
+      setIsRejectDialogOpen(false);
+      setRejectionReason("");
+    } catch (error) {
+      // Error handling is done in the container
+      // Keep dialog open on error so user can see the error message
     }
   };
 
-  const handleReject = () => {
-    if (onReject && rejectionReason.trim()) {
-      onReject(rejectionReason);
+  // Helper function to handle button clicks with loading states
+  const handleButtonClick = async (
+    action: keyof typeof loadingStates,
+    handler: () => Promise<void> | void
+  ) => {
+    setLoadingStates((prev) => ({ ...prev, [action]: true }));
+    try {
+      await handler();
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [action]: false }));
     }
+  };
+
+  const renderActionButtons = () => {
+    if (!account || !currentUser) return null;
+
+    const isCreatorAuthorized = isRoleAuthorized(currentUser.role, [
+      "ACCOUNT-CREATOR",
+    ]);
+    const isApproverAuthorized = isRoleAuthorized(currentUser.role, [
+      "ACCOUNT-APPROVER",
+    ]);
+
+    // Approver can approve or reject AUTHORIZED accounts
+    if (account.status === "AUTHORIZED" && isApproverAuthorized) {
+      return (
+        <div className="flex items-center">
+          <Button
+            className="ml-2 border"
+            size="sm"
+            variant="destructive"
+            onClick={() => setIsRejectDialogOpen(true)}
+            disabled={loadingStates.reject || loadingStates.approve}
+          >
+            {loadingStates.reject ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <X className="mr-2 h-4 w-4" />
+            )}
+            Reject
+          </Button>
+          <Button
+            className="ml-2 border bg-cyan-500"
+            size="sm"
+            onClick={() => handleButtonClick("approve", handleApproveClick)}
+            disabled={loadingStates.approve || loadingStates.reject}
+          >
+            {loadingStates.approve ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Approve
+          </Button>
+        </div>
+      );
+    }
+
+    // Creator can authorize PENDING accounts (same as Individual)
+    if (account.status === "PENDING" && isCreatorAuthorized) {
+      return (
+        <div className="flex items-center">
+          <Button
+            className="ml-2 border bg-cyan-500"
+            size="sm"
+            onClick={() => handleButtonClick("authorize", () => handleAuthorizeAccount(account.accountId))}
+            disabled={loadingStates.authorize}
+          >
+            {loadingStates.authorize ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Authorize
+          </Button>
+        </div>
+      );
+    }
+
+    // Creator can verify REGISTERED accounts
+    if (account.status === "REGISTERED" && isCreatorAuthorized) {
+      return (
+        <div className="flex items-center">
+          <Button
+            className="ml-2 border bg-cyan-500"
+            size="sm"
+            onClick={() => handleButtonClick("verify", handleVerifyAccount)}
+            disabled={loadingStates.verify}
+          >
+            {loadingStates.verify ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Verify
+          </Button>
+        </div>
+      );
+    }
+
+    // Creator can authorize VERIFIED accounts
+    if (account.status === "VERIFIED" && isCreatorAuthorized) {
+      return (
+        <div className="flex items-center">
+          <Button
+            className="ml-2 border bg-cyan-500"
+            size="sm"
+            onClick={() => handleButtonClick("authorize", () => handleAuthorizeAccount(account.accountId))}
+            disabled={loadingStates.authorize}
+          >
+            {loadingStates.authorize ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Authorize
+          </Button>
+        </div>
+      );
+    }
+
+    // Creator can reverse authorization on AUTHORIZED accounts
+    if (account.status === "AUTHORIZED" && isCreatorAuthorized) {
+      return (
+        <div className="flex items-center">
+          <Button
+            className="ml-2 border bg-cyan-500"
+            size="sm"
+            onClick={() => handleButtonClick("reverseAuthorization", () => handleReverseAuthorization(account.accountId))}
+            disabled={loadingStates.reverseAuthorization}
+          >
+            {loadingStates.reverseAuthorization ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
+            Reverse Authorization
+          </Button>
+        </div>
+      );
+    }
+
+    // Creator can settle UNSETTLED accounts
+    if (account.status === "UNSETTLED" && isCreatorAuthorized) {
+      return (
+        <Button
+          className="ml-2 border"
+          size="sm"
+          variant="secondary"
+          onClick={() => {
+            settleModal.onOpen();
+            navigate('/accounts');
+          }}
+          disabled={loadingStates.settle}
+        >
+          {loadingStates.settle ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCheck className="mr-2 h-4 w-4" />
+          )}
+          Settle
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
+  // Type guard to check if customer has extended fields
+  const hasExtendedFields = (customer: any): customer is ExtendedCustomerInfo => {
+    return customer && (
+      'dateOfBirth' in customer ||
+      'title' in customer ||
+      'issueAuthority' in customer ||
+      'issueDate' in customer ||
+      'expirayDate' in customer ||
+      'haveCboAccount' in customer
+    );
   };
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <Button variant="outline" className="w-fit" onClick={onBack}>
-        <ArrowLeftIcon className="mr-2 h-4 w-4" />
-        Back
-      </Button>
-
-      <Card className="rounded-xl shadow-lg bg-white">
+    <div className="flex w-full justify-center">
+      <SettleModal
+        selectedAccountIds={[account?.accountId || 0]}
+        amount={account?.initialDeposit || 0}
+      />
+      <Card className="w-full rounded-xl shadow-lg bg-white">
         <CardHeader className="flex flex-row items-center justify-between space-x-6 p-6 border-b">
-          <div>
-            <CardTitle className="text-2xl font-bold text-gray-800">
-              Organizational Account Details
-            </CardTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div>
-                <p className="text-gray-600">Account Number: {account.accountNumber || "N/A"}</p>
-                <p className="text-gray-600">Account Type: {account.accountType || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Initial Deposit: {account.initialDeposit || "N/A"}</p>
-                <p className="text-gray-600">Branch: {account.branch || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-gray-600">Currency: {account.currency || "N/A"}</p>
-                <p className="text-gray-600">Status: 
-                  <Badge variant="outline" className="ml-2">
-                    {account.status || "N/A"}
-                  </Badge>
-                </p>
+          <div className="flex space-x-6 items-center">
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-gray-500" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold text-gray-800">
+                {account?.companyName}
+              </CardTitle>
+              <div className="flex items-center space-x-2 mt-2">
+                <Badge
+                  variant={
+                    account?.status === "REGISTERED" || account?.status === "PENDING" ? "secondary" : "default"
+                  }
+                >
+                  {account?.status}
+                </Badge>
+                <Badge variant="outline">{account?.accountType}</Badge>
               </div>
             </div>
           </div>
-          {account.addedByFullName && (
-            <div className="text-gray-700 text-right">
-              <p>
-                Added By: <strong>{account.addedByFullName}</strong> ({account.addedByRole || "N/A"})
-              </p>
-              <p className="text-sm text-gray-500">
-                Created: {account.createdAt ? format(new Date(account.createdAt), "PPpp") : "N/A"}
-              </p>
-              <p className="text-sm text-gray-500">
-                Updated: {account.updatedAt ? format(new Date(account.updatedAt), "PPpp") : "N/A"}
-              </p>
-            </div>
-          )}
         </CardHeader>
 
-        <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Company Information */}
-            <Card className="border rounded-lg p-4 shadow-sm bg-gray-50">
-              <CardTitle className="text-lg font-semibold mb-4 flex items-center">
-                <Building2Icon className="mr-2 h-5 w-5" />
-                Company Information
-              </CardTitle>
-              
-              <div className="space-y-3">
-                <div className="flex items-start space-x-2">
-                  <FileTextIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Company Name:</p>
-                    <p>{account.companyName || "N/A"}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <MailIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Company Email:</p>
-                    <p>{account.companyEmail || "N/A"}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <PhoneIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Company Phone:</p>
-                    <p>{account.companyPhoneNumber || "N/A"}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <LandmarkIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">TIN Number:</p>
-                    <p>{account.companyTinNumber || "N/A"}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start space-x-2">
-                  <MapPinIcon className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Company Address:</p>
-                    <p>
-                      {account.companyResidence || "N/A"}, {account.companySubCity || ""}, {account.companyZone || ""}
-                    </p>
-                    <p>
-                      {account.companyWoreda ? `Woreda: ${account.companyWoreda}` : ""}
-                    </p>
-                  </div>
-                </div>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+          {/* Company Information */}
+          <div className="space-y-4">
+            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
+              <Building2 className="mr-2 h-5 w-5" />
+              Company Information
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <FileTextIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">Name: {account?.companyName || "N/A"}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <MailIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">Email: {account?.companyEmail || "N/A"}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <PhoneIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">Phone: {account?.companyPhoneNumber || "N/A"}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <LandmarkIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">TIN: {account?.companyTinNumber || "N/A"}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <BriefcaseIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">Target: {account?.companyTarget || "N/A"}</p>
+            </div>
+            {(account as any)?.dateOfEstablishment && (
+              <div className="flex items-center space-x-2">
+                <CalendarIcon className="h-5 w-5 text-gray-400" />
+                <p className="text-gray-700">
+                  Established: {format(new Date((account as any).dateOfEstablishment), "MM/dd/yyyy")}
+                </p>
               </div>
-            </Card>
+            )}
+          </div>
 
-            {/* Authorized Representatives */}
-            {account.customersInfo && account.customersInfo.length > 0 && (
-              <Card className="border rounded-lg p-4 shadow-sm bg-gray-50">
-                <CardTitle className="text-lg font-semibold mb-4 flex items-center">
-                  <UserIcon className="mr-2 h-5 w-5" />
-                  Authorized Representatives
-                </CardTitle>
-                
-                <div className="space-y-4">
-                  {account.customersInfo.map((customer) => (
-                    <div key={customer.id} className="border-b pb-3 last:border-b-0 last:pb-0">
-                      <p className="font-medium">{customer.fullName}</p>
-                      <div className="grid grid-cols-2 gap-2 mt-2">
-                        <div className="flex items-center space-x-2 text-sm">
-                          <MailIcon className="h-4 w-4" />
-                          <p>{customer.email || "N/A"}</p>
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm">
-                          <PhoneIcon className="h-4 w-4" />
-                          <p>{customer.phone || "N/A"}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+          {/* Company Address */}
+          <div className="space-y-4">
+            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
+              <MapPinIcon className="mr-2 h-5 w-5" />
+              Company Address
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <HomeIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">
+                {account?.companyResidence || "N/A"}
+              </p>
+            </div>
+            <p className="text-gray-700">
+              Sub City: {account?.companySubCity || "N/A"}
+            </p>
+            <p className="text-gray-700">
+              Zone: {account?.companyZone || "N/A"}
+            </p>
+            <p className="text-gray-700">
+              State: {account?.companyState || "N/A"}
+            </p>
+            {account?.companyWoreda && (
+              <p className="text-gray-700">
+                Woreda: {account.companyWoreda}
+              </p>
+            )}
+          </div>
+
+          {/* Financial Information */}
+          <div className="space-y-4">
+            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center">
+              <DollarSignIcon className="mr-2 h-5 w-5" />
+              Financial Information
+            </CardTitle>
+            <div className="flex items-center space-x-2">
+              <DollarSignIcon className="h-5 w-5 text-gray-400" />
+              <p className="text-gray-700">
+                Initial Deposit: {account?.currency || "ETB"} {Number(account?.initialDeposit || 0).toFixed(2)}
+              </p>
+            </div>
+            <p className="text-gray-700">
+              Currency: {account?.currency || "ETB"}
+            </p>
+            <p className="text-gray-700">
+              Branch: {account?.branch || "N/A"}
+            </p>
+            {account?.accountNumber && (
+              <p className="text-gray-700">
+                Account Number: {account.accountNumber}
+              </p>
+            )}
+            {account?.customerId && (
+              <p className="text-gray-700">
+                Customer ID: {account.customerId}
+              </p>
             )}
           </div>
         </CardContent>
 
-        <CardContent className="p-6 border-t flex flex-wrap justify-end gap-2">
-          {onVerify && (
-            <Button variant="default" onClick={onVerify}>
-              <CheckIcon className="mr-2 h-4 w-4" />
-              Verify Account
-            </Button>
-          )}
-
-          {onApprove && (
-            <Button variant="default" onClick={onApprove}>
-              <ShieldCheckIcon className="mr-2 h-4 w-4" />
-              Approve Account
-            </Button>
-          )}
-
-          {onReject && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="destructive">
-                  <XIcon className="mr-2 h-4 w-4" />
-                  Reject Account
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Reject Account</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Input
-                      id="rejectionReason"
-                      placeholder="Enter rejection reason"
-                      className="col-span-4"
-                      value={rejectionReason}
-                      onChange={(e) => setRejectionReason(e.target.value)}
-                    />
+        {/* Organizational Documents Section */}
+        {((account as any)?.letterOfRequest || (account as any)?.tradeLicense || (account as any)?.articlesOfAssociation) && (
+          <CardContent className="p-6 border-t">
+            <CardTitle className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <FileTextIcon className="mr-2 h-5 w-5" />
+              Organizational Documents
+            </CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {(account as any)?.letterOfRequest && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Letter of Request</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).letterOfRequest) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).letterOfRequest} 
+                        alt="Letter of Request" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).letterOfRequest);
+                          setZoomedImageTitle(`${account?.companyName} - Letter of Request`);
+                          setIsPdf(isPdfFile((account as any).letterOfRequest));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).letterOfRequest) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button variant="destructive" onClick={handleReject}>
-                    Confirm Rejection
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
+              )}
+              {(account as any)?.tradeLicense && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Trade License</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).tradeLicense) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).tradeLicense} 
+                        alt="Trade License" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).tradeLicense);
+                          setZoomedImageTitle(`${account?.companyName} - Trade License`);
+                          setIsPdf(isPdfFile((account as any).tradeLicense));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).tradeLicense) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {(account as any)?.articlesOfAssociation && (
+                <div className="relative group">
+                  <p className="text-gray-600 text-sm font-medium mb-2">Articles of Association</p>
+                  <div className="relative w-full h-48">
+                    {isPdfFile((account as any).articlesOfAssociation) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-xs text-gray-600">PDF Document</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={(account as any).articlesOfAssociation} 
+                        alt="Articles of Association" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage((account as any).articlesOfAssociation);
+                          setZoomedImageTitle(`${account?.companyName} - Articles of Association`);
+                          setIsPdf(isPdfFile((account as any).articlesOfAssociation));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile((account as any).articlesOfAssociation) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
 
-          {onAuthorize && (
-            <Button variant="default" onClick={onAuthorize}>
-              <ShieldCheckIcon className="mr-2 h-4 w-4" />
-              Authorize Account
+        {/* Authorized Representatives Section */}
+        {account?.customersInfo && account.customersInfo.length > 0 && (
+          <CardContent className="p-6 border-t">
+            <CardTitle className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+              <User className="mr-2 h-5 w-5" />
+              Authorized Representatives
+            </CardTitle>
+            <div className="flex flex-col gap-6 mt-4">
+              {account.customersInfo.map((customer, index) => {
+                const extendedCustomer = customer as ExtendedCustomerInfo;
+                return (
+                  <Card key={customer.id || index} className="border rounded-lg p-6 shadow-sm bg-gray-50 w-full">
+                    <div className="space-y-4">
+                      {/* Name Header */}
+                      <div className="flex items-center space-x-2 pb-3 border-b">
+                        <User className="h-5 w-5 text-gray-400" />
+                        <p className="font-semibold text-gray-800 text-lg">
+                          {customer.fullName} {(extendedCustomer as any).surname && (extendedCustomer as any).surname}
+                        </p>
+                      </div>
+                      
+                      {/* Main Content Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Contact Information */}
+                        <div className="space-y-3">
+                          <p className="font-medium text-gray-700 text-sm mb-2">Contact Information</p>
+                          <div className="flex items-center space-x-2">
+                            <MailIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-gray-700 text-sm">
+                                {customer.email || "N/A"}
+                              </p>
+                              {customer.emailVerified !== undefined && (
+                                <Badge variant={customer.emailVerified ? "default" : "secondary"} className="text-xs">
+                                  {customer.emailVerified ? "Verified" : "Unverified"}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <PhoneIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                            <p className="text-gray-700 text-sm">{customer.phone || "N/A"}</p>
+                          </div>
+                          {(extendedCustomer as any).state && (
+                            <p className="text-gray-700 text-sm">
+                              State: {(extendedCustomer as any).state}
+                            </p>
+                          )}
+                          {(extendedCustomer as any).country && (
+                            <p className="text-gray-700 text-sm">
+                              Country: {(extendedCustomer as any).country}
+                            </p>
+                          )}
+                          {(extendedCustomer as any).zoneSubCity && (
+                            <p className="text-gray-700 text-sm">
+                              Zone/Sub City: {(extendedCustomer as any).zoneSubCity}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Personal Details */}
+                        {hasExtendedFields(extendedCustomer) && (
+                          <div className="space-y-3">
+                            <p className="font-medium text-gray-700 text-sm mb-2">Personal Details</p>
+                            {extendedCustomer.title && (
+                              <p className="text-gray-700 text-sm">
+                                Title: {extendedCustomer.title}
+                              </p>
+                            )}
+                            
+                            {extendedCustomer.dateOfBirth && (
+                              <div className="flex items-center space-x-2">
+                                <CalendarIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                <p className="text-gray-700 text-sm">
+                                  DOB: {format(new Date(extendedCustomer.dateOfBirth), "MM/dd/yyyy")}
+                                </p>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).sex && (
+                              <p className="text-gray-700 text-sm">
+                                Gender: {(extendedCustomer as any).sex}
+                              </p>
+                            )}
+                            {(extendedCustomer as any).documentName && (
+                              <p className="text-gray-700 text-sm">
+                                Document Type: {(extendedCustomer as any).documentName}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Document Information */}
+                        {hasExtendedFields(extendedCustomer) && 
+                         (extendedCustomer.issueAuthority || extendedCustomer.issueDate || extendedCustomer.expirayDate) && (
+                          <div className="space-y-3">
+                            <p className="font-medium text-gray-700 text-sm mb-2">Identification Document</p>
+                            {extendedCustomer.issueAuthority && (
+                              <p className="text-gray-600 text-sm">
+                                Authority: {extendedCustomer.issueAuthority}
+                              </p>
+                            )}
+                            {extendedCustomer.issueDate && (
+                              <p className="text-gray-600 text-sm">
+                                Issue Date: {format(new Date(extendedCustomer.issueDate), "MM/dd/yyyy")}
+                              </p>
+                            )}
+                            {extendedCustomer.expirayDate && (
+                              <p className="text-gray-600 text-sm">
+                                Expiry Date: {format(new Date(extendedCustomer.expirayDate), "MM/dd/yyyy")}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Photos and Signatures */}
+                      {((extendedCustomer as any).photo || (extendedCustomer as any).signature || (extendedCustomer as any).residenceCard || (extendedCustomer as any).residenceCardBack) && (
+                        <div className="mt-4 pt-4 border-t">
+                          <p className="font-medium text-gray-700 text-sm mb-2">Documents</p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {(extendedCustomer as any).photo && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Photo</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).photo) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).photo} 
+                                      alt="Customer photo" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).photo);
+                                        setZoomedImageTitle(`${customer.fullName} - Photo`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).photo));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).photo) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).signature && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Signature</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).signature) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).signature} 
+                                      alt="Customer signature" 
+                                      className="w-full h-full object-contain rounded border bg-white"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).signature);
+                                        setZoomedImageTitle(`${customer.fullName} - Signature`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).signature));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).signature) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).residenceCard && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Residence Card (Front)</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).residenceCard) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).residenceCard} 
+                                      alt="Residence card front" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).residenceCard);
+                                        setZoomedImageTitle(`${customer.fullName} - Residence Card (Front)`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).residenceCard));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).residenceCard) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {(extendedCustomer as any).residenceCardBack && (
+                              <div className="relative group">
+                                <p className="text-gray-600 text-sm font-medium mb-2">Residence Card (Back)</p>
+                                <div className="relative w-32 h-32">
+                                  {isPdfFile((extendedCustomer as any).residenceCardBack) ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                                      <File className="h-8 w-8 text-gray-400 mb-1" />
+                                      <p className="text-xs text-gray-600">PDF</p>
+                                    </div>
+                                  ) : (
+                                    <img 
+                                      src={(extendedCustomer as any).residenceCardBack} 
+                                      alt="Residence card back" 
+                                      className="w-full h-full object-cover rounded border"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  )}
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-center justify-center">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      className="opacity-100"
+                                      onClick={() => {
+                                        setZoomedImage((extendedCustomer as any).residenceCardBack);
+                                        setZoomedImageTitle(`${customer.fullName} - Residence Card (Back)`);
+                                        setIsPdf(isPdfFile((extendedCustomer as any).residenceCardBack));
+                                      }}
+                                    >
+                                      <ZoomIn className="h-4 w-4 mr-2" />
+                                      {isPdfFile((extendedCustomer as any).residenceCardBack) ? 'View' : 'Zoom'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Timestamps */}
+                      {(extendedCustomer.createdAt || extendedCustomer.updatedAt) && (
+                        <div className="pt-3 border-t text-xs text-gray-500 flex gap-4">
+                          {extendedCustomer.createdAt && (
+                            <p>Created: {format(new Date(extendedCustomer.createdAt), "MM/dd/yyyy")}</p>
+                          )}
+                          {extendedCustomer.updatedAt && (
+                            <p>Updated: {format(new Date(extendedCustomer.updatedAt), "MM/dd/yyyy")}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        )}
+
+        {/* Image/PDF Zoom Dialog */}
+        <Dialog open={!!zoomedImage} onOpenChange={(open) => {
+          if (!open) {
+            setZoomedImage(null);
+            setIsPdf(false);
+          }
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>{zoomedImageTitle}</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center p-4">
+              {zoomedImage && (
+                <>
+                  {isPdf ? (
+                    <iframe
+                      src={zoomedImage}
+                      className="w-full h-[70vh] rounded border"
+                      title={zoomedImageTitle}
+                    />
+                  ) : (
+                    <img 
+                      src={zoomedImage} 
+                      alt={zoomedImageTitle}
+                      className="max-w-full max-h-[70vh] object-contain rounded"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Rejection Reason Dialog */}
+        <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reason for Rejection</DialogTitle>
+              <DialogDescription>
+                Please provide a reason for rejecting this account.
+              </DialogDescription>
+            </DialogHeader>
+            <Textarea
+              placeholder="Enter rejection reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              className="mt-4"
+            />
+            <DialogFooter>
+              <Button
+                variant="secondary"
+                onClick={() => setIsRejectDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => handleButtonClick("reject", confirmRejection)}
+                disabled={!rejectionReason.trim() || loadingStates.reject}
+              >
+                {loadingStates.reject ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : null}
+                Confirm Rejection
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Action Buttons */}
+        <CardContent className="p-6 border-t">
+          <div className="flex items-center justify-end border-t pt-5">
+            <Button
+              className="ml-2 border"
+              size="sm"
+              onClick={() => navigate('/accounts')}
+              variant="secondary"
+            >
+              Cancel
             </Button>
-          )}
-
-          {onReverseAuthorization && (
-            <Button variant="outline" onClick={onReverseAuthorization}>
-              <ShieldOffIcon className="mr-2 h-4 w-4" />
-              Reverse Authorization
-            </Button>
-          )}
-
-          {onUpdateStatus && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <RefreshCwIcon className="mr-2 h-4 w-4" />
-                  Update Status
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {statusOptions.map((option) => (
-                  <DropdownMenuItem
-                    key={option.value}
-                    onSelect={() => handleStatusChange(option.value)}
-                  >
-                    {option.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+            {renderActionButtons()}
+          </div>
         </CardContent>
       </Card>
     </div>

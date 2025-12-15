@@ -1,5 +1,5 @@
 import { FC, useState } from "react";
-import { IndividualAccount } from "@/features/accounts/accountApiSlice";
+import { IndividualAccount, useUpdateCustomerInfoMutation } from "@/features/accounts/accountApiSlice";
 import { format } from "date-fns";
 import {
   Card,
@@ -9,11 +9,11 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  CheckCheck,
   HomeIcon,
   PhoneIcon,
   X,
   Edit,
+  GitMerge,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ import { User } from "@/features/user/userApiSlice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import toast from "react-hot-toast";
 
 type AccountDetailPresentationProps = {
   account: IndividualAccount | undefined;
@@ -61,7 +62,19 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   const [rejectionReason, setRejectionReason] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedAccount, setEditedAccount] = useState<Partial<IndividualAccount>>({});
+  const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
   const settleModal = useSettleModal();
+  const [updateCustomerInfo, { isLoading: isMerging }] = useUpdateCustomerInfoMutation();
+
+  // Loading states for buttons
+  const [loadingStates, setLoadingStates] = useState({
+    verify: false,
+    authorize: false,
+    approve: false,
+    reject: false,
+    reverseAuthorization: false,
+    settle: false,
+  });
 
   const confirmRejection = () => {
     handleRejectClick(rejectionReason);
@@ -106,6 +119,15 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
     return String(val1).toLowerCase().trim() === String(val2).toLowerCase().trim();
   };
 
+  const handleButtonClick = async (action: string, callback: () => Promise<void>) => {
+    setLoadingStates((prev) => ({ ...prev, [action]: true }));
+    try {
+      await callback();
+    } finally {
+      setLoadingStates((prev) => ({ ...prev, [action]: false }));
+    }
+  };
+
   const renderActionButtons = () => {
     if (!account || !currentUser) return null;
 
@@ -140,9 +162,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-yellow-500 hover:bg-yellow-600 text-white"
             size="sm"
-            onClick={handleVerifyAccount}
+            onClick={() => handleButtonClick("verify", handleVerifyAccount)}
+            disabled={loadingStates.verify}
           >
-            Verify Account
+            {loadingStates.verify ? "Verifying..." : "Verify Account"}
           </Button>
         )}
 
@@ -150,9 +173,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-cyan-500"
             size="sm"
-            onClick={() => handleAuthorizeAccount(account.accountId)}
+            onClick={() => handleButtonClick("authorize", () => handleAuthorizeAccount(account.accountId))}
+            disabled={loadingStates.authorize}
           >
-            Authorize
+            {loadingStates.authorize ? "Authorizing..." : "Authorize"}
           </Button>
         )}
 
@@ -163,6 +187,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
               size="sm"
               variant="destructive"
               onClick={() => setIsRejectDialogOpen(true)}
+              disabled={loadingStates.reject}
             >
               <X className="mr-2 h-4 w-4" />
               Reject
@@ -170,9 +195,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             <Button
               className="border bg-cyan-500"
               size="sm"
-              onClick={handleApproveClick}
+              onClick={() => handleButtonClick("approve", handleApproveClick)}
+              disabled={loadingStates.approve}
             >
-              Approve
+              {loadingStates.approve ? "Approving..." : "Approve"}
             </Button>
           </>
         )}
@@ -181,9 +207,10 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-cyan-500"
             size="sm"
-            onClick={() => handleReverseAuthorization(account.id)}
+            onClick={() => handleButtonClick("reverseAuthorization", () => handleReverseAuthorization(account.id))}
+            disabled={loadingStates.reverseAuthorization}
           >
-            Reverse Authorization
+            {loadingStates.reverseAuthorization ? "Reversing..." : "Reverse Authorization"}
           </Button>
         )}
 
@@ -193,11 +220,13 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             size="sm"
             variant="secondary"
             onClick={() => {
-              settleModal.onOpen();
+              handleButtonClick("settle", async () => {
+                settleModal.onOpen();
+              });
             }}
+            disabled={loadingStates.settle}
           >
-            <CheckCheck className="mr-2 h-4 w-4" />
-            Settle
+            {loadingStates.settle ? "Settling..." : "Settle"}
           </Button>
         )}
       </div>
@@ -274,7 +303,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
                   <div>
                     <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
                     <p className={`text-gray-700 ${!valuesMatch(account?.fullName, account?.customerUserInfo?.fullName) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.fullName || "N/A"}
+                      {account?.fullName || "N/A"} {account?.surname || ""}
                     </p>
                   </div>
                   <div>
@@ -388,6 +417,21 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
                   )}
                 </div>
               </div>
+            </div>
+
+            {/* add button to merge the infomration */}
+            <div className="flex flex-col items-center justify-center py-4 space-y-3">
+              <p className="text-sm text-gray-600 text-center max-w-md">
+                This will merge customer data from Fayda to Core Banking, replacing existing customer information in the core banking system.
+              </p>
+              <Button 
+                className="border bg-cyan-500 hover:bg-cyan-600" 
+                size="sm"
+                onClick={() => setIsMergeDialogOpen(true)}
+              >
+                <GitMerge className="mr-2 h-4 w-4" />
+                Merge Information
+              </Button>
             </div>
           </CardContent>
         )}
@@ -562,6 +606,76 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             </Button>
             <Button variant="destructive" onClick={confirmRejection}>
               Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Merge Confirmation Dialog */}
+      <Dialog open={isMergeDialogOpen} onOpenChange={setIsMergeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Merge</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to merge? This will replace the customer data on core banking with the data from fayda.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsMergeDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              className="bg-cyan-500 hover:bg-cyan-600"
+              onClick={async () => {
+                if (!account?.id) {
+                  toast.error("Account ID is missing");
+                  return;
+                }
+
+                try {
+                  const response = await updateCustomerInfo({ accountId: account.id }).unwrap();
+                  
+                  // Check the response structure from backend
+                  if (response?.success === true) {
+                    toast.success(response?.message || "Customer information merged successfully");
+                    setIsMergeDialogOpen(false);
+                  } else {
+                    // Handle case where success is false (shouldn't happen with 200, but just in case)
+                    toast.error(response?.error || "Failed to merge customer information");
+                    setIsMergeDialogOpen(false);
+                  }
+                } catch (error: any) {
+                  // Handle error response from backend (400 status)
+                  // RTK Query puts the response body in error.data
+                  const errorResponse = error?.data;
+                  
+                  // Extract error message from the response
+                  let errorMessage = "Failed to merge customer information";
+                  
+                  if (errorResponse) {
+                    if (errorResponse.error) {
+                      errorMessage = errorResponse.error;
+                    } else if (errorResponse.message) {
+                      errorMessage = errorResponse.message;
+                    } else if (typeof errorResponse === 'string') {
+                      errorMessage = errorResponse;
+                    }
+                  } else if (error?.message) {
+                    errorMessage = error.message;
+                  }
+                  
+                  toast.error(errorMessage);
+                  
+                  // Close dialog even on error
+                  setIsMergeDialogOpen(false);
+                }
+              }}
+              disabled={isMerging}
+            >
+              {isMerging ? "Merging..." : "Confirm Merge"}
             </Button>
           </DialogFooter>
         </DialogContent>
