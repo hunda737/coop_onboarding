@@ -12,6 +12,7 @@ import ProspectiveDetailContainer from "./ProspectiveDetailContainer";
 import InactiveAccountDetailContainer from "./InactiveAccountDetailContainer";
 import RtgsContainer from "./RtgsContainer";
 import FlowSettingsContainer from "./FlowSettingsContainer";
+import HarmonizationContainer from "./HarmonizationContainer";
 
 export {
   AccountContainer,
@@ -28,4 +29,5 @@ export {
   InactiveAccountDetailContainer,
   RtgsContainer,
   FlowSettingsContainer,
+  HarmonizationContainer,
 };

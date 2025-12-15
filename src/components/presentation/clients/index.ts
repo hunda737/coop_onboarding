@@ -12,6 +12,7 @@ import InactiveAccountDetailPresentation from "./InactiveAccountDetailPresentati
 import UserDetailPresentation from "./UserDetailPresentation";
 import RtgsPresentation from "./RtgsPresentation";
 import FlowSettingsPresentation from "./FlowSettingsPresentation";
+import HarmonizationPresentation from "./HarmonizationPresentation";
 
 export {
   AccountPresentation,
@@ -28,4 +29,5 @@ export {
   UserDetailPresentation,
   RtgsPresentation,
   FlowSettingsPresentation,
+  HarmonizationPresentation,
 };

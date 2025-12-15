@@ -31,6 +31,11 @@ const sidebarMenu = {
       authorizedRoles: ["SUPER-ADMIN"],
     },
     {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Target,
+    },
+    {
       title: "KYC Admins",
       url: "/kyc-admins",
       icon: Users2,
@@ -115,6 +120,11 @@ const sidebarMenu = {
       url: "/accounts",
       icon: BookUser,
     },
+    {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Target,
+    }
 
     // {
     //   title: "Inactive Accounts",

@@ -41,6 +41,12 @@ export function DataTableToolbar<TData>({
   // Helper function to safely get column
   const getColumnSafely = (columnId: string) => {
     try {
+      // Check if column exists by looking in all columns first
+      const allColumns = table.getAllColumns();
+      const columnExists = allColumns.some(col => col.id === columnId);
+      if (!columnExists) {
+        return null;
+      }
       return table.getColumn(columnId);
     } catch {
       return null;
