@@ -26,13 +26,21 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
       harmonizationModal.setStep(3);
     }
   };
+  const faydaData = harmonizationModal.faydaData;
   const [consent, setConsent] = useState(false);
-  const [showConsent, setShowConsent] = useState(true);
+  const [showConsent, setShowConsent] = useState(!faydaData);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isWaitingForAuth, setIsWaitingForAuth] = useState(false);
   const [clientId, setClientId] = useState<string>("");
 
   const [getFaydaUrl, { isLoading: isLoadingUrl }] = useLazyGetFaydaUrlQuery();
+
+  // If faydaData exists, don't show consent screen
+  useEffect(() => {
+    if (faydaData) {
+      setShowConsent(false);
+    }
+  }, [faydaData]);
 
   useEffect(() => {
     // Cleanup WebSocket on unmount
@@ -49,7 +57,6 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
       return;
     }
 
-    setShowConsent(false);
     setIsConnecting(true);
 
     try {
@@ -57,17 +64,18 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
       const newClientId = Date.now().toString();
       setClientId(newClientId);
 
-      // Connect to WebSocket with timeout
-      const connectTimeout = setTimeout(() => {
-        if (!wsManager.isConnected()) {
-          toast.error("WebSocket connection timeout. Please try again.");
-          setIsConnecting(false);
-          wsManager.disconnect();
-        }
-      }, 10000); // 10 second timeout
-
-      await wsManager.connect();
-      clearTimeout(connectTimeout);
+      // Connect to WebSocket (with built-in 30 second timeout)
+      console.log("Attempting to connect to WebSocket...");
+      try {
+        await wsManager.connect(undefined, 30000); // 30 second timeout
+        console.log("WebSocket connected successfully");
+      } catch (connectError: any) {
+        console.error("WebSocket connection error:", connectError);
+        toast.error(connectError?.message || "Failed to connect to WebSocket. Please try again.");
+        setIsConnecting(false);
+        wsManager.disconnect();
+        return;
+      }
 
       // Register client
       wsManager.registerClient(newClientId);
@@ -109,13 +117,26 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
           toast.error("Authentication timeout. Please try again.");
           setIsWaitingForAuth(false);
           setShowConsent(true);
+          setIsConnecting(false);
           unsubscribe();
           wsManager.disconnect();
         }
       }, 300000);
 
       // Get Fayda URL
-      const response = await getFaydaUrl(newClientId).unwrap();
+      console.log("Fetching Fayda URL for clientId:", newClientId);
+      let response;
+      try {
+        response = await getFaydaUrl(newClientId).unwrap();
+        console.log("Fayda URL received:", response);
+      } catch (urlError: any) {
+        console.error("Error fetching Fayda URL:", urlError);
+        toast.error(urlError?.data?.message || "Failed to get authentication URL. Please try again.");
+        setIsConnecting(false);
+        setShowConsent(true);
+        wsManager.disconnect();
+        return;
+      }
 
       if (response.url) {
         // Open popup
@@ -132,6 +153,8 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
           return;
         }
 
+        // Only hide consent screen after popup opens successfully
+        setShowConsent(false);
         setIsConnecting(false);
         setIsWaitingForAuth(true);
       }
@@ -139,23 +162,32 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
       console.error("Fayda authentication error:", error);
       toast.error(error?.data?.message || "Failed to start authentication");
       setIsConnecting(false);
+      setShowConsent(true);
       wsManager.disconnect();
     }
   };
 
-  const faydaData = harmonizationModal.faydaData;
-
   // Consent Screen
   if (showConsent && !faydaData) {
     return (
-      <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">National ID Verification Required</h2>
-          <p className="text-gray-600">
-            To open your individual account, we need to verify your identity using your
-            National ID (Fayda). This process is secure and will pre-fill your personal
-            information for faster account opening.
-          </p>
+      <div className="space-y-4">
+        {/* National ID Verification Description */}
+        <div className="border-2 rounded-lg p-4 shadow-sm" style={{ background: "linear-gradient(to right, rgba(13, 176, 241, 0.1), rgba(13, 176, 241, 0.05))", borderColor: "rgba(13, 176, 241, 0.3)" }}>
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-0.5">
+              <div className="rounded-full p-1.5" style={{ backgroundColor: "rgba(13, 176, 241, 0.2)" }}>
+                <CheckCircle2 className="h-4 w-4" style={{ color: "#0db0f1" }} />
+              </div>
+            </div>
+            <div>
+              <p className="text-sm font-semibold mb-1" style={{ color: "#0db0f1" }}>National ID Verification Required</p>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                To open your individual account, we need to verify your identity using your
+                National ID (Fayda). This process is secure and will pre-fill your personal
+                information for faster account opening.
+              </p>
+            </div>
+          </div>
         </div>
 
         <Card>
@@ -203,12 +235,12 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
             className="w-full shadow-md"
             style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
             onMouseEnter={(e) => {
-              if (!e.currentTarget.disabled) {
+              if (!e.currentTarget.disabled && !isConnecting && !isLoadingUrl) {
                 e.currentTarget.style.backgroundColor = "#0ba0d8";
               }
             }}
             onMouseLeave={(e) => {
-              if (!e.currentTarget.disabled) {
+              if (!e.currentTarget.disabled && !isConnecting && !isLoadingUrl) {
                 e.currentTarget.style.backgroundColor = "#0db0f1";
               }
             }}
@@ -245,6 +277,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
           onClick={() => {
             setIsWaitingForAuth(false);
             setShowConsent(true);
+            setIsConnecting(false);
             wsManager.disconnect();
           }}
           className="hover:bg-gray-50"
@@ -259,7 +292,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
   // Display Fayda data
   if (faydaData) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200">
           <div className="inline-block p-3 bg-green-100 rounded-full mb-3">
             <CheckCircle2 className="h-8 w-8 text-green-600" />

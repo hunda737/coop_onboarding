@@ -56,20 +56,45 @@ export class WebSocketManager {
   /**
    * Connect to WebSocket server
    */
-  public connect(url?: string): Promise<void> {
+  public connect(url?: string, timeout: number = 30000): Promise<void> {
     if (url) {
       this.url = url;
     }
 
     return new Promise((resolve, reject) => {
       try {
+        // Clean up existing connection if any
+        if (this.ws) {
+          this.ws.close();
+          this.ws = null;
+        }
+
         this.isIntentionallyClosed = false;
+        console.log(`Connecting to WebSocket: ${this.url}`);
         this.ws = new WebSocket(this.url);
 
+        let connectionTimeout: NodeJS.Timeout;
+        let isResolved = false;
+
+        // Set up connection timeout
+        connectionTimeout = setTimeout(() => {
+          if (!isResolved && this.ws) {
+            isResolved = true;
+            console.error("WebSocket connection timeout");
+            this.ws.close();
+            this.ws = null;
+            reject(new Error(`WebSocket connection timeout after ${timeout}ms`));
+          }
+        }, timeout);
+
         this.ws.onopen = () => {
-          console.log("WebSocket connected");
-          this.reconnectAttempts = 0;
-          resolve();
+          if (!isResolved) {
+            isResolved = true;
+            clearTimeout(connectionTimeout);
+            console.log("WebSocket connected successfully");
+            this.reconnectAttempts = 0;
+            resolve();
+          }
         };
 
         this.ws.onmessage = (event) => {
@@ -87,12 +112,29 @@ export class WebSocketManager {
         };
 
         this.ws.onerror = (error) => {
-          console.error("WebSocket error:", error);
-          reject(error);
+          console.error("WebSocket error event:", error);
+          console.error("WebSocket readyState:", this.ws?.readyState);
+          if (!isResolved) {
+            isResolved = true;
+            clearTimeout(connectionTimeout);
+            const errorMessage = "WebSocket connection failed. Please check your network connection.";
+            reject(new Error(errorMessage));
+          }
         };
 
-        this.ws.onclose = () => {
-          console.log("WebSocket closed");
+        this.ws.onclose = (event) => {
+          clearTimeout(connectionTimeout);
+          console.log("WebSocket closed", {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean
+          });
+          
+          // Only reject if not already resolved and not intentionally closed
+          if (!isResolved && !this.isIntentionallyClosed) {
+            isResolved = true;
+            reject(new Error(`WebSocket connection closed unexpectedly. Code: ${event.code}, Reason: ${event.reason || 'Unknown'}`));
+          }
           
           // Attempt to reconnect if not intentionally closed
           if (!this.isIntentionallyClosed && this.reconnectAttempts < this.maxReconnectAttempts) {
@@ -100,7 +142,7 @@ export class WebSocketManager {
             console.log(`Reconnecting... Attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
             
             setTimeout(() => {
-              this.connect().catch(console.error);
+              this.connect(url, timeout).catch(console.error);
             }, this.reconnectDelay);
           }
         };

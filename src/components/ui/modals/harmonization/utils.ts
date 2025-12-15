@@ -45,15 +45,97 @@ export const formatDateString = (dateStr: string): string => {
 };
 
 /**
- * Convert base64 to Blob with error handling
+ * Convert base64 to File with proper MIME type and extension
+ * Allowed types: jpg, jpeg, png, gif
+ * Automatically converts unsupported formats to JPEG
  */
-export const base64ToBlob = (
+export const base64ToBlob = async (
   base64: string,
-  contentType: string = "image/jpeg"
-): Blob | null => {
+  filename: string = "image.jpg"
+): Promise<File | null> => {
   try {
-    // Remove data URL prefix if present
-    const base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+    let mimeType = "image/jpeg"; // Default to JPEG
+    let base64Data = base64;
+    let extension = "jpg";
+    let needsConversion = false;
+
+    // Extract MIME type from data URL if present
+    const dataUrlMatch = base64.match(/^data:image\/(\w+);base64,/);
+    if (dataUrlMatch) {
+      const extractedType = dataUrlMatch[1].toLowerCase();
+      base64Data = base64.replace(/^data:image\/\w+;base64,/, "");
+      
+      // Map to allowed MIME types
+      switch (extractedType) {
+        case "jpeg":
+        case "jpg":
+          mimeType = "image/jpeg";
+          extension = "jpg";
+          break;
+        case "png":
+          mimeType = "image/png";
+          extension = "png";
+          break;
+        case "gif":
+          mimeType = "image/gif";
+          extension = "gif";
+          break;
+        default:
+          // For any other type, we need to convert to JPEG
+          needsConversion = true;
+          mimeType = "image/jpeg";
+          extension = "jpg";
+          console.warn(`Unsupported image type: ${extractedType}, will convert to JPEG`);
+      }
+    } else {
+      // If no MIME type in base64, assume JPEG
+      base64Data = base64;
+    }
+
+    // If we need to convert unsupported formats, use canvas
+    if (needsConversion) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              resolve(null);
+              return;
+            }
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(
+              (blob) => {
+                if (blob) {
+                  const file = new File([blob], filename.replace(/\.[^/.]+$/, "") + `.${extension}`, {
+                    type: mimeType,
+                    lastModified: Date.now(),
+                  });
+                  resolve(file);
+                } else {
+                  resolve(null);
+                }
+              },
+              "image/jpeg",
+              0.9 // JPEG quality
+            );
+          } catch (error) {
+            console.error("Failed to convert image:", error);
+            resolve(null);
+          }
+        };
+        img.onerror = () => {
+          console.error("Failed to load image for conversion");
+          resolve(null);
+        };
+        img.src = base64; // Use original base64 with data URL
+      });
+    }
+
+    // Decode base64 for supported formats
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
 
@@ -62,9 +144,17 @@ export const base64ToBlob = (
     }
 
     const byteArray = new Uint8Array(byteNumbers);
-    return new Blob([byteArray], { type: contentType });
+    const blob = new Blob([byteArray], { type: mimeType });
+
+    // Convert Blob to File with proper filename and extension
+    const file = new File([blob], filename.replace(/\.[^/.]+$/, "") + `.${extension}`, {
+      type: mimeType,
+      lastModified: Date.now(),
+    });
+
+    return file;
   } catch (error) {
-    console.error("Failed to convert base64 to blob:", error);
+    console.error("Failed to convert base64 to file:", error);
     return null;
   }
 };
