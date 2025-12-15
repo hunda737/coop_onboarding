@@ -361,7 +361,7 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             data={harmonizations}
             type="harmonization"
             searchKey="accountNumber"
-            clickable={false}
+            clickable={true}
             onUrl={false}
           />
         )}

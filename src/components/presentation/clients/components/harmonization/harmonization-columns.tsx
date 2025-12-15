@@ -11,6 +11,8 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outli
       return "default"; // Green/success
     case "PENDING_OTP":
       return "secondary"; // Yellow/warning
+    case "PENDING_KYC_REVIEW":
+      return "secondary"; // Yellow/warning
     case "COMPLETED":
       return "outline";
     default:
@@ -24,6 +26,8 @@ const getStatusLabel = (status: string): string => {
       return "Pending OTP";
     case "OTP_VERIFIED":
       return "OTP Verified";
+    case "PENDING_KYC_REVIEW":
+      return "Pending KYC Review";
     case "COMPLETED":
       return "Completed";
     default:

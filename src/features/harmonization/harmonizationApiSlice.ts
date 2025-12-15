@@ -16,14 +16,64 @@ export interface AccountData {
   createdAt: string;
 }
 
+export interface FaydaData {
+  id: number;
+  sub: string;
+  givenName: string;
+  name: string;
+  familyName: string;
+  email: string;
+  phoneNumber: string;
+  pictureUrl: string;
+  birthdate: string;
+  gender: string;
+  addressStreetAddress: string;
+  addressLocality: string;
+  addressRegion: string;
+  addressPostalCode: string;
+  addressCountry: string;
+  createdAt: string;
+}
+
+export interface AddedBy {
+  id: number;
+  fullName: string;
+  username: string;
+  email: string;
+  role: string;
+  branch: string;
+}
+
+export interface ReviewedBy {
+  id: number;
+  fullName: string;
+  username: string;
+  role: string;
+}
+
+export interface Review {
+  id: number;
+  decision: "MERGE" | "REJECT";
+  rejectionReason?: string;
+  reviewedBy: ReviewedBy;
+  reviewedAt: string;
+  createdAt: string;
+}
+
 export interface Harmonization {
   id: number;
   accountNumber: string;
   phoneNumber: string;
-  status: "PENDING_OTP" | "OTP_VERIFIED" | "COMPLETED";
+  status: "PENDING_OTP" | "OTP_VERIFIED" | "COMPLETED" | "PENDING_KYC_REVIEW" | "REJECTED";
   createdAt: string;
   updatedAt: string;
   accountData: AccountData;
+}
+
+export interface HarmonizationDetail extends Harmonization {
+  addedBy: AddedBy;
+  faydaData: FaydaData;
+  review?: Review;
 }
 
 export interface SendOtpRequest {
@@ -77,7 +127,8 @@ export interface FaydaUrlResponse {
   clientId: string;
 }
 
-export interface FaydaData {
+// Legacy interface for Fayda data from WebSocket (kept for backward compatibility)
+export interface FaydaDataWebSocket {
   sub: string;
   name: string;
   phone_number: string;
@@ -118,6 +169,17 @@ export interface SaveFaydaDataResponse {
   success: boolean;
   message: string;
   harmonizationId: number;
+}
+
+export interface ReviewHarmonizationRequest {
+  harmonizationRequestId: number;
+  decision: "MERGE" | "REJECT";
+  rejectionReason?: string;
+}
+
+export interface ReviewHarmonizationResponse {
+  success: boolean;
+  message: string;
 }
 
 // RTK Query Endpoints
@@ -213,6 +275,25 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
       },
       invalidatesTags: [{ type: "Harmonization", id: "LIST" }],
     }),
+
+    // GET - Get harmonization by ID
+    getHarmonizationById: builder.query<HarmonizationDetail, number>({
+      query: (id) => `/api/v1/harmonization/${id}`,
+      providesTags: (_result, _error, id) => [{ type: "Harmonization" as const, id }],
+    }),
+
+    // POST - Review harmonization (merge or reject)
+    reviewHarmonization: builder.mutation<ReviewHarmonizationResponse, ReviewHarmonizationRequest>({
+      query: (data) => ({
+        url: "/api/v1/harmonization/review",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (_result, _error, arg) => [
+        { type: "Harmonization", id: arg.harmonizationRequestId },
+        { type: "Harmonization", id: "LIST" },
+      ],
+    }),
   }),
 });
 
@@ -223,5 +304,7 @@ export const {
   useGetFaydaUrlQuery,
   useLazyGetFaydaUrlQuery,
   useSaveFaydaDataMutation,
+  useGetHarmonizationByIdQuery,
+  useReviewHarmonizationMutation,
 } = harmonizationApiSlice;
 
