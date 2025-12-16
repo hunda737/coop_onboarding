@@ -1,6 +1,13 @@
 import { apiSlice } from "../api/apiSlice";
+import { secureAuth } from "@/lib/secureAuth";
 
 // TypeScript Interfaces
+export interface ImageData {
+  id: number;
+  imageType: string;
+  createdAt: string;
+}
+
 export interface AccountData {
   id: number;
   accountTitle: string;
@@ -74,6 +81,7 @@ export interface HarmonizationDetail extends Harmonization {
   addedBy: AddedBy;
   faydaData: FaydaData;
   review?: Review;
+  images?: ImageData[];
 }
 
 export interface SendOtpRequest {
@@ -296,6 +304,42 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         { type: "Harmonization", id: "LIST" },
       ],
     }),
+
+    // GET - Get image by ID (returns blob/Resource)
+    getImageById: builder.query<Blob, number>({
+      queryFn: async (imageId) => {
+        const token = secureAuth.getAccessToken();
+        const baseUrl = "http://localhost:9061";
+        
+        try {
+          const response = await fetch(`${baseUrl}/api/v1/harmonization/image/${imageId}`, {
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "Failed to fetch image");
+            return { 
+              error: { 
+                status: response.status, 
+                data: errorText 
+              } as any
+            };
+          }
+
+          const blob = await response.blob();
+          return { data: blob };
+        } catch (error) {
+          return { 
+            error: { 
+              status: 'FETCH_ERROR' as const, 
+              error: error instanceof Error ? error.message : "Failed to fetch image" 
+            } as any
+          };
+        }
+      },
+    }),
   }),
 });
 
@@ -308,5 +352,6 @@ export const {
   useSaveFaydaDataMutation,
   useGetHarmonizationByIdQuery,
   useReviewHarmonizationMutation,
+  useLazyGetImageByIdQuery,
 } = harmonizationApiSlice;
 

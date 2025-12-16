@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { isRoleAuthorized } from "@/types/authorities";
 import { User } from "@/features/user/userApiSlice";
-import { HarmonizationDetail } from "@/features/harmonization/harmonizationApiSlice";
+import { HarmonizationDetail, useLazyGetImageByIdQuery } from "@/features/harmonization/harmonizationApiSlice";
 import { GitMerge, X, ArrowLeft, ZoomIn, File } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
@@ -81,12 +81,31 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
   const [isPdf, setIsPdf] = useState<boolean>(false);
+  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
+  const [getImageById] = useLazyGetImageByIdQuery();
 
   // Helper function to check if URL is a PDF
   const isPdfFile = (url: string): boolean => {
     if (!url) return false;
     const lowerUrl = url.toLowerCase();
     return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
+  };
+
+  // Handle image card click
+  const handleImageClick = async (imageId: number, imageType: string) => {
+    setIsLoadingImage(true);
+    try {
+      const blob = await getImageById(imageId).unwrap();
+      const imageUrl = URL.createObjectURL(blob);
+      setZoomedImage(imageUrl);
+      setZoomedImageTitle(`${imageType} - Image #${imageId}`);
+      setIsPdf(false);
+    } catch (error) {
+      toast.error("Failed to load image");
+      console.error("Error loading image:", error);
+    } finally {
+      setIsLoadingImage(false);
+    }
   };
 
   if (isLoading) return <LoadingSkeleton />;
@@ -382,6 +401,27 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                   <Badge variant="outline" className="bg-green-50">EXISTING</Badge>
                 </div>
 
+                {/* Images Section */}
+                {harmonization.images && harmonization.images.length > 0 && (
+                  <div className="space-y-3 pb-4 border-b">
+                    <CardTitle className="text-base font-semibold text-gray-700">
+                      Images
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                      {harmonization.images.map((image) => (
+                        <button
+                          key={image.id}
+                          onClick={() => handleImageClick(image.id, image.imageType)}
+                          disabled={isLoadingImage}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                        >
+                          {isLoadingImage ? "Loading..." : image.imageType}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Personal Information */}
                 <div className="space-y-3">
                   <CardTitle className="text-base font-semibold text-gray-700">
@@ -518,6 +558,9 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
       {/* Image/PDF Zoom Dialog */}
       <Dialog open={!!zoomedImage} onOpenChange={(open) => {
         if (!open) {
+          if (zoomedImage && zoomedImage.startsWith('blob:')) {
+            URL.revokeObjectURL(zoomedImage);
+          }
           setZoomedImage(null);
           setIsPdf(false);
         }
