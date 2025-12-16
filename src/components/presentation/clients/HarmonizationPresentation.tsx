@@ -10,6 +10,8 @@ import { Step2Fayda } from "@/components/ui/modals/harmonization/Step2Fayda";
 import { Step3Review } from "@/components/ui/modals/harmonization/Step3Review";
 import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { cn } from "@/lib/utils";
+import { useGetCurrentUserQuery } from "@/features/user/userApiSlice";
+import { isRoleAuthorized } from "@/types/authorities";
 
 type HarmonizationPresentationProps = {
   harmonizations: Harmonization[];
@@ -44,6 +46,8 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
 }) => {
   const [showCreate, setShowCreate] = useState(false);
   const harmonizationModal = useHarmonizationModal();
+  const { data: currentUser } = useGetCurrentUserQuery();
+  const isCreatorAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-CREATOR"]) : false;
 
   const handleNext = () => {
     const currentStep = harmonizationModal.currentStep;
@@ -226,20 +230,22 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             <h1 className="text-3xl font-bold" style={{ color: "#0db0f1" }}>Harmonization</h1>
             <p className="text-gray-600 mt-1">Manage account harmonization with National ID verification</p>
           </div>
-          <Button
-            onClick={handleOpenCreate}
-            className="shadow-lg"
-            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#0ba0d8";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#0db0f1";
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Harmonization
-          </Button>
+          {isCreatorAuthorized && (
+            <Button
+              onClick={handleOpenCreate}
+              className="shadow-lg"
+              style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#0ba0d8";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#0db0f1";
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Harmonization
+            </Button>
+          )}
         </div>
       
       <div className="bg-white rounded-xl shadow-sm border">
@@ -262,15 +268,17 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Harmonizations Found</h3>
             <p className="text-gray-600 mb-4">
-              There are no harmonizations yet. Click the button above to create a new one.
+              There are no harmonizations yet.
             </p>
-            <Button
-              onClick={handleOpenCreate}
-              className="bg-blue-600 hover:bg-blue-700 shadow-lg"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Harmonization
-            </Button>
+            {isCreatorAuthorized && (
+              <Button
+                onClick={handleOpenCreate}
+                className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Harmonization
+              </Button>
+            )}
           </div>
         ) : (
           <DataTable

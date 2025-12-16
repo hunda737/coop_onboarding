@@ -2,6 +2,7 @@ import { Table } from "@tanstack/react-table";
 
 import {
   statuses,
+  harmonizationStatuses,
   operations,
   sex,
   accountType,
@@ -21,10 +22,12 @@ import { getBranchesType } from "./data/getBranchesType";
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
+  type?: string;
 }
 
 export function DataTableToolbar<TData>({
   table,
+  type,
 }: DataTableToolbarProps<TData>) {
   const isFiltered = table.getState().columnFilters.length > 0;
   const params = useParams();
@@ -54,7 +57,7 @@ export function DataTableToolbar<TData>({
           <DataTableFacetedFilter
             column={getColumnSafely("status")!}
             title="Status"
-            options={statuses}
+            options={type === "harmonization" ? harmonizationStatuses : statuses}
           />
         )}
         {getColumnSafely("sex") && (

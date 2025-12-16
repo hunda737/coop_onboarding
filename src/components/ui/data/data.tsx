@@ -295,6 +295,51 @@ export const userStatus = [
   },
 ];
 
+export const harmonizationStatuses = [
+  {
+    value: "PENDING_OTP",
+    label: "Pending OTP",
+    color: "#F59E0B", // Yellow/warning
+    icon: FileQuestion,
+  },
+  {
+    value: "OTP_VERIFIED",
+    label: "OTP Verified",
+    color: "#10B981", // Green/success
+    icon: FileQuestion,
+  },
+  {
+    value: "FAYDA_DATA_RECEIVED",
+    label: "Fayda Data Received",
+    color: "#3B82F6", // Blue/info
+    icon: FileQuestion,
+  },
+  {
+    value: "PENDING_KYC_REVIEW",
+    label: "Pending KYC Review",
+    color: "#F59E0B", // Yellow/warning
+    icon: FileQuestion,
+  },
+  {
+    value: "MERGED",
+    label: "Merged",
+    color: "#10B981", // Green/success
+    icon: FileQuestion,
+  },
+  {
+    value: "REJECTED",
+    label: "Rejected",
+    color: "#EF4444", // Red/error
+    icon: FileQuestion,
+  },
+  {
+    value: "CANCELLED",
+    label: "Cancelled",
+    color: "#6B7280", // Gray
+    icon: FileQuestion,
+  },
+];
+
 export const operations = [
   {
     label: "FT",

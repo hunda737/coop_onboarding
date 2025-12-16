@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { isRoleAuthorized } from "@/types/authorities";
 import { User } from "@/features/user/userApiSlice";
 import { HarmonizationDetail } from "@/features/harmonization/harmonizationApiSlice";
-import { GitMerge, X, ArrowLeft } from "lucide-react";
+import { GitMerge, X, ArrowLeft, ZoomIn, File } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 
@@ -78,6 +78,16 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
   const [rejectionReason, setRejectionReason] = useState("");
   const [isMerging, setIsMerging] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
+  const [isPdf, setIsPdf] = useState<boolean>(false);
+
+  // Helper function to check if URL is a PDF
+  const isPdfFile = (url: string): boolean => {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
+  };
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -268,6 +278,42 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                   </CardTitle>
                   <Badge variant="outline" className="bg-blue-50">NEW</Badge>
                 </div>
+
+                {/* Picture at the top */}
+                {faydaData.pictureUrl && (
+                  <div className="relative w-full h-48 group">
+                    {isPdfFile(faydaData.pictureUrl) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">PDF</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={faydaData.pictureUrl} 
+                        alt="National ID Photo" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-start justify-end p-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage(faydaData.pictureUrl);
+                          setZoomedImageTitle(`${faydaData.name || 'National ID'} - Photo`);
+                          setIsPdf(isPdfFile(faydaData.pictureUrl));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile(faydaData.pictureUrl) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Personal Information */}
                 <div className="space-y-3">
@@ -466,6 +512,42 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
               {isRejecting ? "Rejecting..." : "Reject"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image/PDF Zoom Dialog */}
+      <Dialog open={!!zoomedImage} onOpenChange={(open) => {
+        if (!open) {
+          setZoomedImage(null);
+          setIsPdf(false);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{zoomedImageTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            {zoomedImage && (
+              <>
+                {isPdf ? (
+                  <iframe
+                    src={zoomedImage}
+                    className="w-full h-[70vh] rounded border"
+                    title={zoomedImageTitle}
+                  />
+                ) : (
+                  <img 
+                    src={zoomedImage} 
+                    alt={zoomedImageTitle}
+                    className="max-w-full max-h-[70vh] object-contain rounded"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

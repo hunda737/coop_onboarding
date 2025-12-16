@@ -9,12 +9,18 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outli
   switch (status) {
     case "OTP_VERIFIED":
       return "default"; // Green/success
+    case "MERGED":
+      return "default"; // Green/success
     case "PENDING_OTP":
       return "secondary"; // Yellow/warning
     case "PENDING_KYC_REVIEW":
       return "secondary"; // Yellow/warning
-    case "COMPLETED":
-      return "outline";
+    case "FAYDA_DATA_RECEIVED":
+      return "outline"; // Blue/info
+    case "REJECTED":
+      return "secondary"; // Red/error
+    case "CANCELLED":
+      return "outline"; // Gray
     default:
       return "secondary";
   }
@@ -26,10 +32,16 @@ const getStatusLabel = (status: string): string => {
       return "Pending OTP";
     case "OTP_VERIFIED":
       return "OTP Verified";
+    case "FAYDA_DATA_RECEIVED":
+      return "Fayda Data Received";
     case "PENDING_KYC_REVIEW":
       return "Pending KYC Review";
-    case "COMPLETED":
-      return "Completed";
+    case "MERGED":
+      return "Merged";
+    case "REJECTED":
+      return "Rejected";
+    case "CANCELLED":
+      return "Cancelled";
     default:
       return status;
   }
@@ -100,40 +112,6 @@ export const harmonizationColumns: ColumnDef<Harmonization>[] = [
     cell: ({ row }) => {
       const gender = row.original.accountData?.gender || "N/A";
       return <div className="capitalize">{gender.toLowerCase()}</div>;
-    },
-  },
-  {
-    id: "address",
-    accessorFn: (row) => row.accountData?.address || "",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Address
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const address = row.original.accountData?.address || "N/A";
-      return <div>{address}</div>;
-    },
-  },
-  {
-    id: "ethnicity",
-    accessorFn: (row) => row.accountData?.ethnicity || "",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Ethnicity
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => {
-      const ethnicity = row.original.accountData?.ethnicity || "N/A";
-      return <div>{ethnicity}</div>;
     },
   },
   {

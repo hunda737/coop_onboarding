@@ -5,11 +5,10 @@ import { secureAuth } from "@/lib/secureAuth";
 const baseQuery = fetchBaseQuery({
   // baseUrl: "/api",
   // baseUrl: "http://10.12.53.56:9062",
-
   // baseUrl: "http://10.8.100.111:9061",
   // baseUrl: "https://10.12.53.33:9061",
-  baseUrl: "http://localhost:9061",
-  //  baseUrl: "https://coopengage.coopbankoromiasc.com",
+  // baseUrl: "http://localhost:9061",
+   baseUrl: "https://coopengage.coopbankoromiasc.com",
   prepareHeaders: (headers) => {
     // Get token from secure storage (cookies only)
     const token = secureAuth.getAccessToken();
