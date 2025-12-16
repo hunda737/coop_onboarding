@@ -99,7 +99,7 @@ export const HarmonizationModal = () => {
             <Step2Fayda onNext={handleNext} onBack={handleBack} />
           )}
           {harmonizationModal.currentStep === 3 && (
-            <Step3Review onBack={handleBack} onComplete={handleComplete} />
+            <Step3Review onBack={handleBack} onSubmit={handleComplete} />
           )}
         </div>
       </div>

@@ -35,7 +35,7 @@ const HarmonizationDetailContainer = () => {
     try {
       await reviewHarmonization({
         harmonizationRequestId: harmonization.id,
-        decision: "MERGE",
+        decision: "HARMONIZED",
       }).unwrap();
       toast.success("Harmonization merged successfully.");
       navigate("/harmonization");

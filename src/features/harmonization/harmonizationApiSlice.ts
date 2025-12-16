@@ -53,7 +53,7 @@ export interface ReviewedBy {
 
 export interface Review {
   id: number;
-  decision: "MERGE" | "REJECT";
+  decision: "HARMONIZED" | "REJECT";
   rejectionReason?: string;
   reviewedBy: ReviewedBy;
   reviewedAt: string;
@@ -173,7 +173,7 @@ export interface SaveFaydaDataResponse {
 
 export interface ReviewHarmonizationRequest {
   harmonizationRequestId: number;
-  decision: "MERGE" | "REJECT";
+  decision: "HARMONIZED" | "REJECT";
   rejectionReason?: string;
 }
 
@@ -187,7 +187,7 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all harmonizations
     getHarmonizations: builder.query<Harmonization[], void>({
-      query: () => "/api/v1/harmonization",
+      query: () => "/api/v1/harmonization-review",
       providesTags: (result) =>
         result && Array.isArray(result) && result.length > 0
           ? [
@@ -248,24 +248,26 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
       query: (data) => {
         const formData = new FormData();
         
-        // Append all fields to FormData
-        formData.append("phoneNumber", data.phoneNumber);
-        formData.append("name", data.name);
-        formData.append("sub", data.sub);
-        formData.append("birthdate", data.birthdate);
-        formData.append("gender", data.gender);
-        formData.append("addressRegion", data.addressRegion);
+        // Append all fields to FormData (send empty strings for optional fields if not provided)
+        formData.append("phoneNumber", data.phoneNumber || "");
+        formData.append("email", data.email || "");
+        formData.append("familyName", data.familyName || "");
+        formData.append("name", data.name || "");
+        formData.append("givenName", data.givenName || "");
+        formData.append("sub", data.sub || "");
+        formData.append("birthdate", data.birthdate || "");
+        formData.append("gender", data.gender || "");
+        formData.append("addressStreetAddress", data.addressStreetAddress || "");
+        formData.append("addressLocality", data.addressLocality || "");
+        formData.append("addressRegion", data.addressRegion || "");
+        formData.append("addressPostalCode", data.addressPostalCode || "");
+        formData.append("addressCountry", data.addressCountry || "");
         formData.append("harmonizationRequestId", data.harmonizationRequestId.toString());
         
-        // Optional fields
-        if (data.email) formData.append("email", data.email);
-        if (data.familyName) formData.append("familyName", data.familyName);
-        if (data.givenName) formData.append("givenName", data.givenName);
-        if (data.addressStreetAddress) formData.append("addressStreetAddress", data.addressStreetAddress);
-        if (data.addressLocality) formData.append("addressLocality", data.addressLocality);
-        if (data.addressPostalCode) formData.append("addressPostalCode", data.addressPostalCode);
-        if (data.addressCountry) formData.append("addressCountry", data.addressCountry);
-        if (data.picture) formData.append("picture", data.picture);
+        // Append picture file if provided
+        if (data.picture) {
+          formData.append("picture", data.picture);
+        }
 
         return {
           url: "/api/v1/harmonization/save-fayda-data",
@@ -285,7 +287,7 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
     // POST - Review harmonization (merge or reject)
     reviewHarmonization: builder.mutation<ReviewHarmonizationResponse, ReviewHarmonizationRequest>({
       query: (data) => ({
-        url: "/api/v1/harmonization/review",
+        url: "/api/v1/harmonization-review/review",
         method: "POST",
         body: data,
       }),

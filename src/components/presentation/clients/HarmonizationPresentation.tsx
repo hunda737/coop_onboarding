@@ -1,10 +1,10 @@
 import { DataTable } from "@/components/ui/data-table";
-import { Harmonization } from "@/features/harmonization/harmonizationApiSlice";
+import { Harmonization, useSaveFaydaDataMutation } from "@/features/harmonization/harmonizationApiSlice";
 import { FC, useState } from "react";
 import { harmonizationColumns } from "./components/harmonization/harmonization-columns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Plus, X, CheckCircle2, Circle } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, Loader2 } from "lucide-react";
 import { Step1OTP } from "@/components/ui/modals/harmonization/Step1OTP";
 import { Step2Fayda } from "@/components/ui/modals/harmonization/Step2Fayda";
 import { Step3Review } from "@/components/ui/modals/harmonization/Step3Review";
@@ -12,6 +12,8 @@ import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { cn } from "@/lib/utils";
 import { useGetCurrentUserQuery } from "@/features/user/userApiSlice";
 import { isRoleAuthorized } from "@/types/authorities";
+import { toast } from "react-hot-toast";
+import { base64ToBlob } from "@/components/ui/modals/harmonization/utils";
 
 type HarmonizationPresentationProps = {
   harmonizations: Harmonization[];
@@ -45,9 +47,11 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   error,
 }) => {
   const [showCreate, setShowCreate] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const harmonizationModal = useHarmonizationModal();
   const { data: currentUser } = useGetCurrentUserQuery();
   const isCreatorAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-CREATOR"]) : false;
+  const [saveFaydaData] = useSaveFaydaDataMutation();
 
   const handleNext = () => {
     const currentStep = harmonizationModal.currentStep;
@@ -60,6 +64,68 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
     const currentStep = harmonizationModal.currentStep;
     if (currentStep > 1) {
       harmonizationModal.setStep((currentStep - 1) as 1 | 2 | 3);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const { harmonizationData, faydaData } = harmonizationModal;
+    
+    if (!harmonizationData || !faydaData) {
+      toast.error("Missing required data");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Convert base64 picture to File if present
+      let pictureFile: File | undefined;
+      if (faydaData.pictureUrl) {
+        const file = await base64ToBlob(faydaData.pictureUrl, "profile-picture.jpg");
+        if (file) {
+          pictureFile = file;
+        } else {
+          console.warn("Failed to convert picture, continuing without it");
+        }
+      }
+
+      const harmonizationRequestId = harmonizationData.harmonizationRequestId || harmonizationData.accountData?.id;
+      
+      if (!harmonizationRequestId) {
+        toast.error("Missing harmonization request ID");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const requestData = {
+        phoneNumber: faydaData.phoneNumber,
+        email: faydaData.email,
+        familyName: faydaData.familyName,
+        name: faydaData.name,
+        givenName: faydaData.givenName,
+        sub: faydaData.sub,
+        picture: pictureFile,
+        birthdate: faydaData.birthdate,
+        gender: faydaData.gender,
+        addressStreetAddress: faydaData.addressStreetAddress,
+        addressLocality: faydaData.addressLocality,
+        addressRegion: faydaData.addressRegion,
+        addressPostalCode: faydaData.addressPostalCode,
+        addressCountry: faydaData.addressCountry,
+        harmonizationRequestId,
+      };
+
+      const response = await saveFaydaData(requestData).unwrap();
+
+      if (response.success) {
+        toast.success("Harmonization completed successfully");
+        handleComplete();
+      }
+    } catch (error: any) {
+      console.error("Harmonization error:", error);
+      toast.error(error?.data?.message || "Failed to complete harmonization");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,64 +175,57 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
 
         {/* Stepper */}
         <div className="bg-white rounded-xl shadow-sm border p-8">
-          <div className="flex items-center justify-between relative mb-12">
+          <div className="flex items-center relative mb-12 px-12">
             {steps.map((step, index) => (
-              <div key={step.number} className="flex-1 relative">
-                <div className="flex flex-col items-center">
-                  {/* Step Circle */}
-                  <div
-                    className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-lg",
-                      harmonizationModal.currentStep > step.number
-                        ? "bg-green-500 border-green-500 text-white"
-                        : harmonizationModal.currentStep === step.number
-                        ? "text-white scale-110"
-                        : "bg-white border-gray-300 text-gray-400"
-                    )}
-                    style={
-                      harmonizationModal.currentStep === step.number
-                        ? { backgroundColor: "#0db0f1", borderColor: "#0db0f1" }
-                        : {}
-                    }
-                  >
-                    {harmonizationModal.currentStep > step.number ? (
-                      <CheckCircle2 className="h-6 w-6" />
-                    ) : (
-                      <span className="font-bold text-lg">{step.number}</span>
-                    )}
-                  </div>
-
-                  {/* Step Title */}
-                  <p
-                    className={cn(
-                      "text-sm mt-3 text-center font-semibold",
-                      harmonizationModal.currentStep >= step.number
-                        ? "text-gray-900"
-                        : "text-gray-400"
-                    )}
-                  >
-                    {step.title}
-                  </p>
+              <div key={step.number} className="flex-1 relative flex flex-col items-center">
+                {/* Step Circle */}
+                <div
+                  className={cn(
+                    "w-14 h-14 rounded-full flex items-center justify-center border-3 transition-all duration-300 shadow-lg z-10 relative",
+                    harmonizationModal.currentStep > step.number
+                      ? "bg-green-500 border-green-500 text-white"
+                      : harmonizationModal.currentStep === step.number
+                      ? "text-white scale-110"
+                      : "bg-white border-gray-300 text-gray-400"
+                  )}
+                  style={
+                    harmonizationModal.currentStep === step.number
+                      ? { backgroundColor: "#0db0f1", borderColor: "#0db0f1", borderWidth: "3px" }
+                      : harmonizationModal.currentStep > step.number
+                      ? { borderWidth: "3px" }
+                      : { borderWidth: "3px" }
+                  }
+                >
+                  {harmonizationModal.currentStep > step.number ? (
+                    <CheckCircle2 className="h-7 w-7" />
+                  ) : (
+                    <span className="font-bold text-xl">{step.number}</span>
+                  )}
                 </div>
 
-                {/* Connector Line */}
+                {/* Step Title */}
+                <p
+                  className={cn(
+                    "text-sm mt-3 text-center font-semibold",
+                    harmonizationModal.currentStep >= step.number
+                      ? "text-gray-900"
+                      : "text-gray-400"
+                  )}
+                >
+                  {step.title}
+                </p>
+
+                {/* Connector Line - positioned to connect circles */}
                 {index < steps.length - 1 && (
                   <div
-                    className={cn(
-                      "absolute top-6 left-[55%] w-[90%] h-1 -z-10 transition-all duration-300 rounded-full",
-                      harmonizationModal.currentStep > step.number
-                        ? "bg-green-500"
-                        : harmonizationModal.currentStep === step.number
-                        ? "bg-gradient-to-r"
-                        : "bg-gray-300"
-                    )}
-                    style={
-                      harmonizationModal.currentStep === step.number
-                        ? {
-                            background: `linear-gradient(to right, #0db0f1 50%, #d1d5db 50%)`,
-                          }
-                        : {}
-                    }
+                    className="absolute top-7 left-[50%] h-1 transition-all duration-300 rounded-full"
+                    style={{
+                      width: "calc(100% - 28px)",
+                      backgroundColor: harmonizationModal.currentStep > step.number
+                        ? "#0db0f1"
+                        : "#e5e7eb",
+                      zIndex: 0
+                    }}
                   />
                 )}
               </div>
@@ -178,13 +237,13 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             {harmonizationModal.currentStep === 1 && <Step1OTP />}
             {harmonizationModal.currentStep === 2 && <Step2Fayda />}
             {harmonizationModal.currentStep === 3 && (
-              <Step3Review onComplete={handleComplete} />
+              <Step3Review onSubmit={handleSubmit} isSubmitting={isSubmitting} onBack={handleBack} />
             )}
           </div>
 
           {/* Navigation Buttons */}
           <div className="flex gap-2 mt-8 pt-6 border-t justify-end">
-            {harmonizationModal.currentStep > 1 && (
+            {harmonizationModal.currentStep > 1 && harmonizationModal.currentStep < 3 && (
               <Button
                 variant="outline"
                 onClick={handleBack}
@@ -216,6 +275,38 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
               >
                 Next
               </Button>
+            )}
+
+            {harmonizationModal.currentStep === 3 && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={handleBack}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm border-gray-300 hover:bg-gray-50 rounded-lg transition-all"
+                >
+                  Previous
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all"
+                  style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.backgroundColor = "#0ba0d8";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.backgroundColor = "#0db0f1";
+                    }
+                  }}
+                >
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Submit
+                </Button>
+              </>
             )}
           </div>
         </div>
