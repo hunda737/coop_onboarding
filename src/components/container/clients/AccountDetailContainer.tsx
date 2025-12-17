@@ -109,13 +109,13 @@ const AccountDetailContainer = () => {
   };
 
   const handleRejectClick = async (rejectionReason: string) => {
-    if (!individualAccount?.id) {
+    if (!individualAccount?.accountId) {
       toast.error("Account ID is missing.");
       return;
     }
     try {
       await changeAccountStatus({
-        id: individualAccount.id.toString(),
+        id: individualAccount.accountId.toString(),
         status: "REJECTED",
         rejectionReason,
       }).unwrap();

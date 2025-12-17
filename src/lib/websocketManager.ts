@@ -37,7 +37,8 @@ type MessageHandler = (message: WebSocketMessage) => void;
 export class WebSocketManager {
   private static instance: WebSocketManager | null = null;
   private ws: WebSocket | null = null;
-  private url: string = "wss://10.16.0.25/ws/fayda";
+  private url: string = "wss://coopengage.coopbankoromiasc.com/ws/fayda";
+  // private url: string = "wss://10.16.0.25/ws/fayda";
   private messageHandlers: Set<MessageHandler> = new Set();
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;

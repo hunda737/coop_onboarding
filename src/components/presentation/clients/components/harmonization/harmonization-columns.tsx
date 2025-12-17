@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Harmonization } from "@/features/harmonization/harmonizationApiSlice";
 import { format } from "date-fns";
+import { HarmonizationCellAction } from "./cell-actions";
 
 const getStatusBadgeVariant = (status: string): "default" | "secondary" | "outline" => {
   switch (status) {
@@ -176,6 +177,10 @@ export const harmonizationColumns: ColumnDef<Harmonization>[] = [
         return <div>{createdAt}</div>;
       }
     },
+  },
+  {
+    id: "actions",
+    cell: ({ row }) => <HarmonizationCellAction data={row.original} />,
   },
 ];
 
