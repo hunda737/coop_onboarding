@@ -1,16 +1,23 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "react-hot-toast";
-import { Loader2, Phone } from "lucide-react";
+import { Loader2, Building } from "lucide-react";
 import {
   useSendOtpMutation,
-  useVerifyOtpMutation,
+  useGetHarmonizationByIdQuery,
+  useLazyGetImageByIdQuery,
 } from "@/features/harmonization/harmonizationApiSlice";
 import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { CardTitle } from "@/components/ui/card";
 
 interface Step1OTPProps {
   onNext?: () => void;
@@ -21,23 +28,69 @@ export const Step1OTP: FC<Step1OTPProps> = () => {
 
   // Initialize account number from stored data or empty
   const storedData = harmonizationModal.harmonizationData;
-  const hasVerifiedData = storedData?.accountData?.accountData;
+  const hasVerifiedData = !!storedData?.accountData?.accountData;
   
   const [accountNumber, setAccountNumber] = useState(
     storedData?.accountNumber || storedData?.accountData?.accountNumber || ""
   );
-  const [otpCode, setOtpCode] = useState("");
-  const [otpSent, setOtpSent] = useState(!!storedData?.maskedPhoneNumber && !hasVerifiedData);
 
   const [sendOtp, { isLoading: isSendingOtp }] = useSendOtpMutation();
-  const [verifyOtp, { isLoading: isVerifyingOtp }] = useVerifyOtpMutation();
+  const [harmonizationRequestId, setHarmonizationRequestId] = useState<number | null>(null);
+  const processedRequestIdRef = useRef<number | null>(null);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
+  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
+  const [getImageById] = useLazyGetImageByIdQuery();
+  
+  // Fetch harmonization detail to get account data
+  const { data: harmonizationDetail, isLoading: isLoadingDetail } = useGetHarmonizationByIdQuery(
+    harmonizationRequestId!,
+    { skip: !harmonizationRequestId }
+  );
+
+  // Handle image card click
+  const handleImageClick = async (imageId: number, imageType: string) => {
+    setIsLoadingImage(true);
+    try {
+      const blob = await getImageById(imageId).unwrap();
+      const imageUrl = URL.createObjectURL(blob);
+      setZoomedImage(imageUrl);
+      setZoomedImageTitle(`${imageType} - Image #${imageId}`);
+    } catch (error) {
+      toast.error("Failed to load image");
+      console.error("Error loading image:", error);
+    } finally {
+      setIsLoadingImage(false);
+    }
+  };
 
   // Update account number when stored data changes
   useEffect(() => {
     if (storedData?.accountNumber && !accountNumber) {
       setAccountNumber(storedData.accountNumber);
     }
-  }, [storedData]);
+  }, [storedData, accountNumber]);
+
+  // When harmonization detail is loaded, store account data (don't auto-advance)
+  useEffect(() => {
+    if (harmonizationDetail && harmonizationRequestId && processedRequestIdRef.current !== harmonizationRequestId) {
+      harmonizationModal.setHarmonizationData({
+        accountNumber: harmonizationDetail.accountNumber,
+        harmonizationRequestId: harmonizationDetail.id,
+        phoneNumber: harmonizationDetail.phoneNumber,
+        accountData: {
+          id: harmonizationDetail.id,
+          accountNumber: harmonizationDetail.accountNumber,
+          phoneNumber: harmonizationDetail.phoneNumber,
+          status: harmonizationDetail.status,
+          createdAt: harmonizationDetail.createdAt,
+          updatedAt: harmonizationDetail.createdAt,
+          accountData: harmonizationDetail.accountData,
+        },
+      });
+      processedRequestIdRef.current = harmonizationRequestId;
+    }
+  }, [harmonizationDetail, harmonizationRequestId]);
 
   const handleSendOtp = async () => {
     const trimmedAccount = accountNumber.trim();
@@ -61,6 +114,7 @@ export const Step1OTP: FC<Step1OTPProps> = () => {
     try {
       const response = await sendOtp({ accountNumber: trimmedAccount }).unwrap();
       
+      // Store basic data and harmonizationRequestId
       harmonizationModal.setHarmonizationData({
         accountNumber: trimmedAccount,
         harmonizationRequestId: response.harmonizationRequestId,
@@ -68,282 +122,190 @@ export const Step1OTP: FC<Step1OTPProps> = () => {
         maskedPhoneNumber: response.maskedPhoneNumber,
       });
 
-      setOtpSent(true);
-      toast.success(response.message || "OTP sent successfully");
+      // Set the ID to trigger fetching harmonization detail
+      setHarmonizationRequestId(response.harmonizationRequestId);
+      processedRequestIdRef.current = null; // Reset ref when starting new request
+
+      // Show success message without mentioning OTP
+      const message = response.message || "Account harmonization request created successfully";
+      const cleanMessage = message.replace(/OTP.*?skipped/gi, "").replace(/for staff request/gi, "").trim();
+      toast.success(cleanMessage || "Account information retrieved successfully");
     } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to send OTP");
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!otpCode.trim()) {
-      toast.error("Please enter the OTP code");
-      return;
-    }
-
-    if (otpCode.length !== 6) {
-      toast.error("OTP code must be 6 digits");
-      return;
-    }
-
-    const harmonizationData = harmonizationModal.harmonizationData;
-    if (!harmonizationData?.harmonizationRequestId) {
-      toast.error("Missing harmonization request ID");
-      return;
-    }
-
-    try {
-      const response = await verifyOtp({
-        accountNumber,
-        harmonizationRequestId: harmonizationData.harmonizationRequestId,
-        otpCode,
-      }).unwrap();
-
-      if (response.success) {
-        harmonizationModal.setHarmonizationData({
-          harmonizationRequestId: response.harmonizationRequestId,
-          accountData: response.harmonizationData,
-        });
-        toast.success(response.message || "OTP verified successfully");
-        // Don't auto-advance, let user see the data first
-      }
-    } catch (error: any) {
-      toast.error(error?.data?.message || "Failed to verify OTP");
+      toast.error(error?.data?.message || "Failed to retrieve account information");
     }
   };
 
   const accountData = storedData?.accountData?.accountData;
 
-  // Show verified account data
-  // if (hasVerifiedData && accountData) {
-  //   return (
-  //     <div className="space-y-6">
-  //       <div className="text-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6 rounded-2xl border-2 border-green-300 shadow-lg">
-  //         <div className="inline-block p-3 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-3 shadow-md">
-  //           <CheckCircle2 className="h-7 w-7 text-white" />
-  //         </div>
-  //         <h3 className="text-xl font-bold text-green-700 mb-1">OTP Verified Successfully!</h3>
-  //         <p className="text-sm text-gray-600">Account information retrieved</p>
-  //       </div>
-
-  //       <div 
-  //         className="rounded-2xl p-8 shadow-xl border-2" 
-  //         style={{ 
-  //           borderColor: "#0db0f1",
-  //           background: "linear-gradient(135deg, rgba(13, 176, 241, 0.03) 0%, rgba(13, 176, 241, 0.08) 100%)"
-  //         }}
-  //       >
-  //         <div className="space-y-5">
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 FULL NAME
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">{accountData.accountTitle}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <User className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 ACCOUNT NUMBER
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">{storedData?.accountData?.accountNumber || accountNumber}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <Building className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 PHONE NUMBER
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">{accountData.mobile}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <Phone className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 GENDER
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900 capitalize">{accountData.gender.toLowerCase()}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <User className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 ADDRESS
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">{accountData.address}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <MapPin className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 ETHNICITY
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">{accountData.ethnicity}</p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <User className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center pb-4 border-b-2" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 DATE OF BIRTH
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">
-  //                 {accountData.dateOfBirth ? format(new Date(accountData.dateOfBirth), "MMMM dd, yyyy") : "N/A"}
-  //               </p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <Calendar className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-
-  //           <div className="flex items-center" style={{ borderColor: "#0db0f1" }}>
-  //             <div className="flex-1">
-  //               <p className="text-xs font-bold tracking-wider mb-2" style={{ color: "#0db0f1" }}>
-  //                 OPENING DATE
-  //               </p>
-  //               <p className="text-lg font-bold text-gray-900">
-  //                 {accountData.openingDate ? format(new Date(accountData.openingDate), "MMMM dd, yyyy") : "N/A"}
-  //               </p>
-  //             </div>
-  //             <div className="p-3 rounded-xl" style={{ backgroundColor: "rgba(13, 176, 241, 0.1)" }}>
-  //               <Calendar className="h-6 w-6" style={{ color: "#0db0f1" }} />
-  //             </div>
-  //           </div>
-  //         </div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
   type DetailRowProps = {
-  label: string;
-  value?: string | number | null;
-};
+    label: string;
+    value?: string | number | null;
+  };
 
-const DetailRow = ({ label, value }: DetailRowProps) => {
-  return (
-    <div className="grid grid-cols-3 gap-4 px-6 py-3 text-sm">
-      <div className="font-medium text-gray-600">
-        {label}
-      </div>
-
-      <div className="col-span-2 font-semibold text-gray-900">
-        {value || "—"}
-      </div>
-    </div>
-  );
-};
-
-if (hasVerifiedData && accountData) {
-  return (
-    <div className="space-y-4">
-      {/* Success Header */}
-      <div className="border border-green-300 bg-green-50 rounded-lg px-6 py-4">
-        <h3 className="text-lg font-semibold text-green-700">
-          OTP Verified Successfully
-        </h3>
-        <p className="text-sm text-gray-600">
-          Account information has been retrieved successfully.
-        </p>
-      </div>
-
-      {/* Account Details */}
-      <div className="border rounded-lg bg-white shadow-sm">
-        <div className="border-b px-6 py-4">
-          <h4 className="text-base font-semibold text-gray-800">
-            Customer Account Information
-          </h4>
+  const DetailRow = ({ label, value }: DetailRowProps) => {
+    return (
+      <div className="grid grid-cols-3 gap-4 px-6 py-3 text-sm">
+        <div className="font-medium text-gray-600">
+          {label}
         </div>
-
-        <div className="divide-y">
-          <DetailRow label="Full Name" value={accountData.accountTitle} />
-
-          <DetailRow
-            label="Account Number"
-            value={storedData?.accountData?.accountNumber || accountNumber}
-          />
-
-          <DetailRow label="Phone Number" value={accountData.mobile} />
-
-          <DetailRow
-            label="Gender"
-            value={accountData.gender}
-          />
-
-          <DetailRow
-            label="Address"
-            value={accountData.address}
-          />
-
-          <DetailRow
-            label="Ethnicity"
-            value={accountData.ethnicity}
-          />
-
-          <DetailRow
-            label="Date of Birth"
-            value={
-              accountData.dateOfBirth
-                ? format(new Date(accountData.dateOfBirth), "MMMM dd, yyyy")
-                : "N/A"
-            }
-          />
-
-          <DetailRow
-            label="Account Opening Date"
-            value={
-              accountData.openingDate
-                ? format(new Date(accountData.openingDate), "MMMM dd, yyyy")
-                : "N/A"
-            }
-          />
+        <div className="col-span-2 font-semibold text-gray-900">
+          {value || "—"}
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  };
+
+  // Show account information if data is retrieved
+  if (hasVerifiedData && accountData) {
+    return (
+      <div className="space-y-4">
+        {/* Success Header */}
+        <div className="border border-green-300 bg-green-50 rounded-lg px-6 py-4">
+          <h3 className="text-lg font-semibold text-green-700">
+            Account Information Retrieved
+          </h3>
+          <p className="text-sm text-gray-600">
+            Account information has been retrieved successfully. Review the details below and continue to the next step.
+          </p>
+        </div>
+
+        {/* Account Details */}
+        <div className="border rounded-lg bg-white shadow-sm">
+          <div className="border-b px-6 py-4">
+            <h4 className="text-base font-semibold text-gray-800">
+              Customer Account Information
+            </h4>
+          </div>
+
+          <div className="divide-y">
+            <DetailRow label="Full Name" value={accountData.accountTitle} />
+
+            <DetailRow
+              label="Account Number"
+              value={storedData?.accountData?.accountNumber || accountNumber}
+            />
+
+            <DetailRow label="Phone Number" value={accountData.mobile} />
+
+            <DetailRow
+              label="Gender"
+              value={accountData.gender}
+            />
+
+            <DetailRow
+              label="Address"
+              value={accountData.address}
+            />
+
+            <DetailRow
+              label="Ethnicity"
+              value={accountData.ethnicity}
+            />
+
+            <DetailRow
+              label="Date of Birth"
+              value={
+                accountData.dateOfBirth
+                  ? format(new Date(accountData.dateOfBirth), "MMMM dd, yyyy")
+                  : "N/A"
+              }
+            />
+
+            <DetailRow
+              label="Account Opening Date"
+              value={
+                accountData.openingDate
+                  ? format(new Date(accountData.openingDate), "MMMM dd, yyyy")
+                  : "N/A"
+              }
+            />
+          </div>
+
+          {/* Images Section */}
+          {harmonizationDetail?.images && harmonizationDetail.images.length > 0 && (
+            <div className="space-y-3 px-6 py-4 border-t">
+              <CardTitle className="text-base font-semibold text-gray-700">
+                Images
+              </CardTitle>
+              <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                {harmonizationDetail.images.map((image) => (
+                  <button
+                    key={image.id}
+                    onClick={() => handleImageClick(image.id, image.imageType)}
+                    disabled={isLoadingImage}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                  >
+                    {isLoadingImage ? "Loading..." : image.imageType}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Continue Button */}
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={() => harmonizationModal.setStep(2)}
+            className="px-6 py-2 shadow-md"
+            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#0ba0d8";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#0db0f1";
+            }}
+          >
+            Continue to National ID
+          </Button>
+        </div>
+
+        {/* Image Zoom Dialog */}
+        <Dialog open={!!zoomedImage} onOpenChange={(open) => {
+          if (!open) {
+            if (zoomedImage && zoomedImage.startsWith('blob:')) {
+              URL.revokeObjectURL(zoomedImage);
+            }
+            setZoomedImage(null);
+          }
+        }}>
+          <DialogContent className="max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>{zoomedImageTitle}</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center p-4">
+              {zoomedImage && (
+                <img 
+                  src={zoomedImage} 
+                  alt={zoomedImageTitle}
+                  className="max-w-full max-h-[70vh] object-contain rounded"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {/* OTP Verification Description */}
+      {/* Account Information Description */}
       <div className="border-2 rounded-lg p-4 shadow-sm" style={{ background: "linear-gradient(to right, rgba(13, 176, 241, 0.1), rgba(13, 176, 241, 0.05))", borderColor: "rgba(13, 176, 241, 0.3)" }}>
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-0.5">
             <div className="rounded-full p-1.5" style={{ backgroundColor: "rgba(13, 176, 241, 0.2)" }}>
-              <Phone className="h-4 w-4" style={{ color: "#0db0f1" }} />
+              <Building className="h-4 w-4" style={{ color: "#0db0f1" }} />
             </div>
           </div>
           <div>
-            <p className="text-sm font-semibold mb-1" style={{ color: "#0db0f1" }}>OTP Verification Required</p>
+            <p className="text-sm font-semibold mb-1" style={{ color: "#0db0f1" }}>Account Verification</p>
             <p className="text-sm text-gray-700 leading-relaxed">
-              To proceed with account harmonization, we need to verify your account ownership. 
-              Enter your 13-digit account number to receive a One-Time Password (OTP) via SMS on 
-              the registered phone number. This secure verification ensures that only authorized 
-              account holders can initiate the harmonization process.
+              To proceed with account harmonization, enter your 13-digit account number. 
+              The system will automatically retrieve and verify your account information.
             </p>
           </div>
         </div>
@@ -363,7 +325,7 @@ if (hasVerifiedData && accountData) {
               }
             }}
             maxLength={13}
-            disabled={otpSent || isSendingOtp}
+            disabled={hasVerifiedData || isSendingOtp || isLoadingDetail}
           />
           <p className="text-xs text-gray-500 flex items-center gap-1">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -373,10 +335,10 @@ if (hasVerifiedData && accountData) {
           </p>
         </div>
 
-        {!otpSent && (
+        {!hasVerifiedData && (
           <Button
             onClick={handleSendOtp}
-            disabled={isSendingOtp || !accountNumber.trim()}
+            disabled={isSendingOtp || isLoadingDetail || !accountNumber.trim() || accountNumber.length !== 13}
             className="w-full shadow-md"
             style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
             onMouseEnter={(e) => {
@@ -390,74 +352,11 @@ if (hasVerifiedData && accountData) {
               }
             }}
           >
-            {isSendingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send OTP
+            {(isSendingOtp || isLoadingDetail) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isSendingOtp || isLoadingDetail ? "Retrieving Account Information..." : "Retrieve Account Information"}
           </Button>
         )}
       </div>
-
-      {otpSent && !hasVerifiedData && (
-        <div className="space-y-4 border-t pt-4">
-          <div className="p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-800">
-              OTP sent to:{" "}
-              <span className="font-semibold">
-                {harmonizationModal.harmonizationData?.maskedPhoneNumber}
-              </span>
-            </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="otpCode">OTP Code</Label>
-            <Input
-              id="otpCode"
-              placeholder="Enter 6-digit OTP"
-              value={otpCode}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value.length <= 6) {
-                  setOtpCode(value);
-                }
-              }}
-              maxLength={6}
-              disabled={isVerifyingOtp}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setOtpSent(false);
-                setOtpCode("");
-              }}
-              disabled={isVerifyingOtp}
-              className="flex-1"
-            >
-              Resend OTP
-            </Button>
-            <Button
-              onClick={handleVerifyOtp}
-              disabled={isVerifyingOtp || otpCode.length !== 6}
-              className="flex-1 shadow-md"
-              style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = "#0ba0d8";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!e.currentTarget.disabled) {
-                  e.currentTarget.style.backgroundColor = "#0db0f1";
-                }
-              }}
-            >
-              {isVerifyingOtp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Verify OTP
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

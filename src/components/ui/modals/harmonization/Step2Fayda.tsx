@@ -388,6 +388,22 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
           </Card>
         </div>
 
+        {/* Continue Button */}
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={() => harmonizationModal.setStep(3)}
+            className="px-6 py-2 shadow-md"
+            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#0ba0d8";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#0db0f1";
+            }}
+          >
+            Continue to Review
+          </Button>
+        </div>
       </div>
     );
   }

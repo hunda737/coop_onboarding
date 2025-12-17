@@ -94,6 +94,29 @@ export interface SendOtpResponse {
   phoneNumber: string;
   maskedPhoneNumber: string;
   message: string;
+  success?: boolean;
+  harmonizationData?: {
+    id: number;
+    accountNumber: string;
+    phoneNumber: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    accountData: {
+      id: number;
+      accountTitle: string;
+      mobile: string;
+      address: string;
+      photoUrl: string;
+      ethnicity: string;
+      gender: string;
+      dateOfBirth: string;
+      occupation: string;
+      openingDate: string;
+      customerId: number;
+      createdAt: string;
+    };
+  };
 }
 
 export interface VerifyOtpRequest {

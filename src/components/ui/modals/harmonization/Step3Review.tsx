@@ -1,17 +1,15 @@
 import { FC } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { format } from "date-fns";
 
 interface Step3ReviewProps {
-  onBack?: () => void;
   onSubmit?: () => void;
   isSubmitting?: boolean;
 }
 
-export const Step3Review: FC<Step3ReviewProps> = ({ onBack, onSubmit: _onSubmit, isSubmitting: _isSubmitting }) => {
+export const Step3Review: FC<Step3ReviewProps> = ({ onSubmit: _onSubmit, isSubmitting: _isSubmitting }) => {
   const harmonizationModal = useHarmonizationModal();
 
   const { harmonizationData, faydaData } = harmonizationModal;
@@ -20,10 +18,7 @@ export const Step3Review: FC<Step3ReviewProps> = ({ onBack, onSubmit: _onSubmit,
   if (!accountData || !faydaData) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Missing required data. Please go back and try again.</p>
-        <Button variant="outline" onClick={onBack} className="mt-4">
-          Go Back
-        </Button>
+        <p className="text-red-600">Missing required data. Please start over.</p>
       </div>
     );
   }
