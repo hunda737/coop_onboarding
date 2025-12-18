@@ -15,23 +15,14 @@ interface Step2FaydaProps {
   onBack?: () => void;
 }
 
-export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
+export const Step2Fayda: FC<Step2FaydaProps> = () => {
   const harmonizationModal = useHarmonizationModal();
   
-  // Use onNext from props or from modal
-  const handleStepComplete = () => {
-    if (onNext) {
-      onNext();
-    } else {
-      harmonizationModal.setStep(3);
-    }
-  };
   const faydaData = harmonizationModal.faydaData;
   const [consent, setConsent] = useState(false);
   const [showConsent, setShowConsent] = useState(!faydaData);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isWaitingForAuth, setIsWaitingForAuth] = useState(false);
-  const [clientId, setClientId] = useState<string>("");
 
   const [getFaydaUrl, { isLoading: isLoadingUrl }] = useLazyGetFaydaUrlQuery();
 
@@ -62,7 +53,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
     try {
       // Generate random client ID
       const newClientId = Date.now().toString();
-      setClientId(newClientId);
+      // setClientId(newClientId);
 
       // Connect to WebSocket (with built-in 30 second timeout)
       console.log("Attempting to connect to WebSocket...");
@@ -90,17 +81,24 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
           if (authResult.clientId === newClientId && authResult.data) {
             clearTimeout(authTimeout);
             
+            // Map WebSocket response to FaydaData interface
             harmonizationModal.setFaydaData({
-              sub: authResult.data.sub,
-              name: authResult.data.name,
-              phone_number: authResult.data.phone_number,
-              picture: authResult.data.picture,
-              birthdate: authResult.data.birthdate,
-              gender: authResult.data.gender,
-              address: authResult.data.address,
-              given_name: authResult.data.given_name,
-              family_name: authResult.data.family_name,
-              email: authResult.data.email,
+              id: 0,
+              sub: authResult.data.sub || "",
+              name: authResult.data.name || "",
+              phoneNumber: authResult.data.phone_number || "",
+              pictureUrl: authResult.data.picture || "",
+              birthdate: authResult.data.birthdate || "",
+              gender: authResult.data.gender || "",
+              givenName: authResult.data.given_name || "",
+              familyName: authResult.data.family_name || "",
+              email: authResult.data.email || "",
+              addressStreetAddress: authResult.data.address?.street_address || "",
+              addressLocality: authResult.data.address?.locality || "",
+              addressRegion: authResult.data.address?.region || "",
+              addressPostalCode: authResult.data.address?.postal_code || "",
+              addressCountry: authResult.data.address?.country || "",
+              createdAt: new Date().toISOString(),
             });
 
             setIsWaitingForAuth(false);
@@ -302,11 +300,11 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
           <p className="text-gray-400 mt-1">Your National ID information has been retrieved.</p>
         </div>
 
-        {faydaData.picture && (
+        {faydaData.pictureUrl && (
           <div className="flex justify-center">
             <div className="relative">
               <img
-                src={faydaData.picture}
+                src={faydaData.pictureUrl}
                 alt="Profile"
                   className="w-32 h-32 rounded-full border-4 object-cover shadow-lg"
                   style={{ borderColor: "#0db0f1" }}
@@ -381,7 +379,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-500 font-medium mb-1">Phone Number</p>
-                  <p className="font-bold text-gray-900">{faydaData.phone_number}</p>
+                  <p className="font-bold text-gray-900">{faydaData.phoneNumber}</p>
                 </div>
               </div>
             </CardContent>
@@ -395,13 +393,29 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
                 </div>
                 <div className="flex-1">
                   <p className="text-xs text-gray-500 font-medium mb-1">Region</p>
-                  <p className="font-bold text-gray-900">{faydaData.address.region}</p>
+                  <p className="font-bold text-gray-900">{faydaData.addressRegion}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
+        {/* Continue Button */}
+        <div className="mt-6 flex justify-end">
+          <Button
+            onClick={() => harmonizationModal.setStep(3)}
+            className="px-6 py-2 shadow-md"
+            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#0ba0d8";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#0db0f1";
+            }}
+          >
+            Continue to Review
+          </Button>
+        </div>
       </div>
     );
   }

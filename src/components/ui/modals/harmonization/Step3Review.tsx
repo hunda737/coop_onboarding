@@ -5,30 +5,20 @@ import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { format } from "date-fns";
 
 interface Step3ReviewProps {
-  onBack?: () => void;
   onSubmit?: () => void;
   isSubmitting?: boolean;
 }
 
-export const Step3Review: FC<Step3ReviewProps> = ({ onBack, onSubmit, isSubmitting: externalIsSubmitting }) => {
+export const Step3Review: FC<Step3ReviewProps> = ({ onSubmit: _onSubmit, isSubmitting: _isSubmitting }) => {
   const harmonizationModal = useHarmonizationModal();
 
   const { harmonizationData, faydaData } = harmonizationModal;
   const accountData = harmonizationData?.accountData?.accountData;
 
-  const handleSubmit = async () => {
-    if (onSubmit) {
-      onSubmit();
-    }
-  };
-
   if (!accountData || !faydaData) {
     return (
       <div className="text-center py-8">
-        <p className="text-red-600">Missing required data. Please go back and try again.</p>
-        <Button variant="outline" onClick={onBack} className="mt-4">
-          Go Back
-        </Button>
+        <p className="text-red-600">Missing required data. Please start over.</p>
       </div>
     );
   }
@@ -61,11 +51,11 @@ export const Step3Review: FC<Step3ReviewProps> = ({ onBack, onSubmit, isSubmitti
             <CardTitle className="text-sm" style={{ color: "#0db0f1" }}>National ID (Fayda)</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 pt-3">
-            {faydaData.picture && (
+            {faydaData.pictureUrl && (
               <div className="flex justify-center mb-3">
                 <div className="relative">
                   <img
-                    src={faydaData.picture}
+                    src={faydaData.pictureUrl}
                     alt="Profile"
                     className="w-20 h-20 rounded-full border-2 object-cover shadow-md"
                     style={{ borderColor: "#0db0f1" }}
@@ -94,12 +84,12 @@ export const Step3Review: FC<Step3ReviewProps> = ({ onBack, onSubmit, isSubmitti
 
             <div className="p-2 rounded border" style={{ backgroundColor: "rgba(13, 176, 241, 0.05)", borderColor: "rgba(13, 176, 241, 0.2)" }}>
               <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#0db0f1" }}>Phone Number</p>
-              <p className="text-sm font-bold text-gray-900">{faydaData.phone_number}</p>
+              <p className="text-sm font-bold text-gray-900">{faydaData.phoneNumber}</p>
             </div>
 
             <div className="p-2 rounded border" style={{ backgroundColor: "rgba(13, 176, 241, 0.05)", borderColor: "rgba(13, 176, 241, 0.2)" }}>
               <p className="text-[10px] font-semibold mb-0.5" style={{ color: "#0db0f1" }}>Region</p>
-              <p className="text-sm font-bold text-gray-900">{faydaData.address.region}</p>
+              <p className="text-sm font-bold text-gray-900">{faydaData.addressRegion}</p>
             </div>
           </CardContent>
         </Card>

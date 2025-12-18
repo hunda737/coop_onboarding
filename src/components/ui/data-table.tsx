@@ -31,7 +31,7 @@ import {
   HeadersPageInfo,
 } from "@/features/accounts/accountApiSlice";
 
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { AssignBulkCRMModal } from "./modals/assign-rm-modal";
 import { useAssignBulkCRMModal } from "@/hooks/use-assign-crm-modal";
 import { useSettleModal } from "@/hooks/use-settle-modal";
@@ -55,7 +55,7 @@ export function DataTable<TData, TValue>({
   type,
 }: DataTableProps<TData, TValue>) {
   localStorage.setItem("clickable", clickable.toString());
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const assignBulkCRMModal = useAssignBulkCRMModal();
   const settleModal = useSettleModal();
 
@@ -121,7 +121,7 @@ export function DataTable<TData, TValue>({
         />
         <div className="sm:flex w-full items-center justify-between">
           <div className="sm:ml-2 mb-2">
-            <DataTableToolbar table={table} />
+            <DataTableToolbar table={table} type={type} />
           </div>
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -213,36 +213,36 @@ export function DataTable<TData, TValue>({
         <TableBody>
           {table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row: any) => {
-              const getNavigationPath = () => {
-                const id = (row.original as any).id;
-                const accountId = (row.original as any).accountId;
+              // const getNavigationPath = () => {
+              //   const id = (row.original as any).id;
+              //   const accountId = (row.original as any).accountId;
                 
-                // Handle different types with their specific routes
-                if (type === "harmonization") {
-                  return `/harmonization/${id}`;
-                }
-                if (type === "account") {
-                  // Use accountId if available, otherwise use id
-                  const finalId = accountId || id;
-                  // Check customer type for routing
-                  const customerType = (row.original as any).customerType?.toLowerCase();
-                  if (customerType === "joint") {
-                    return `/joint-accounts/${finalId}`;
-                  }
-                  if (customerType === "organization") {
-                    return `/organizational-accounts/${finalId}`;
-                  }
-                  return `/accounts/${finalId}`;
-                }
-                // Default: return as string for relative navigation
-                return String(id);
-              };
+              //   // Handle different types with their specific routes
+              //   if (type === "harmonization") {
+              //     return `/harmonization/${id}`;
+              //   }
+              //   if (type === "account") {
+              //     // Use accountId if available, otherwise use id
+              //     const finalId = accountId || id;
+              //     // Check customer type for routing
+              //     const customerType = (row.original as any).customerType?.toLowerCase();
+              //     if (customerType === "joint") {
+              //       return `/joint-accounts/${finalId}`;
+              //     }
+              //     if (customerType === "organization") {
+              //       return `/organizational-accounts/${finalId}`;
+              //     }
+              //     return `/accounts/${finalId}`;
+              //   }
+              //   // Default: return as string for relative navigation
+              //   return String(id);
+              // };
               
               return (
               <TableRow
                 key={row.id}
                 className={`${clickable && "cursor-pointer hover:bg-muted/50"}`}
-                onClick={() => clickable && navigate(getNavigationPath())}
+                // onClick={() => clickable && navigate(getNavigationPath())}
                 data-state={row.getIsSelected() && "selected"}
               >
                 {row.getVisibleCells().map((cell: any) => (

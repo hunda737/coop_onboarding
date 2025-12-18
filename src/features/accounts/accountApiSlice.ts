@@ -460,11 +460,6 @@ export const accountApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-
-
-
-
-
     authorizeAccount: builder.mutation<
       { success: boolean; message?: string },
       { accountId: number }
@@ -473,11 +468,26 @@ export const accountApiSlice = apiSlice.injectEndpoints({
         url: `/api/v1/accounts/${accountId}/authorize-account`,
         method: "PUT",
       }),
-      invalidatesTags: (_, __, { accountId }) => [
-
-        { type: "Accounts", id: accountId },
-        { type: "Accounts", id: "LIST" },
-      ],
+      async onQueryStarted({ accountId }, { dispatch, queryFulfilled }) {
+        // Automatically refetch queries after successful mutation
+        // This is RTK Query's equivalent to React Query's automatic refetch
+        try {
+          await queryFulfilled;
+          // Invalidate all relevant tags to trigger automatic refetch
+          dispatch(
+            apiSlice.util.invalidateTags([
+              { type: "Accounts", id: String(accountId) },
+              { type: "Accounts", id: "LIST" },
+              { type: "Accounts", id: "INDIVIDUAL_ACCOUNT_LIST" },
+              { type: "Accounts", id: "JOINT_ACCOUNT_LIST" },
+              { type: "Accounts", id: "ORGANIZATIONAL_ACCOUNT_LIST" },
+              { type: "Accounts", id: "ALL_ACCOUNTS_LIST" },
+            ])
+          );
+        } catch {
+          // Error handling is done by the mutation itself
+        }
+      },
     }),
 
     rejectAuthorization: builder.mutation<

@@ -1,6 +1,13 @@
 import { apiSlice } from "../api/apiSlice";
+import { secureAuth } from "@/lib/secureAuth";
 
 // TypeScript Interfaces
+export interface ImageData {
+  id: number;
+  imageType: string;
+  createdAt: string;
+}
+
 export interface AccountData {
   id: number;
   accountTitle: string;
@@ -53,7 +60,7 @@ export interface ReviewedBy {
 
 export interface Review {
   id: number;
-  decision: "MERGE" | "REJECT";
+  decision: "HARMONIZED" | "REJECT";
   rejectionReason?: string;
   reviewedBy: ReviewedBy;
   reviewedAt: string;
@@ -74,6 +81,7 @@ export interface HarmonizationDetail extends Harmonization {
   addedBy: AddedBy;
   faydaData: FaydaData;
   review?: Review;
+  images?: ImageData[];
 }
 
 export interface SendOtpRequest {
@@ -86,6 +94,29 @@ export interface SendOtpResponse {
   phoneNumber: string;
   maskedPhoneNumber: string;
   message: string;
+  success?: boolean;
+  harmonizationData?: {
+    id: number;
+    accountNumber: string;
+    phoneNumber: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    accountData: {
+      id: number;
+      accountTitle: string;
+      mobile: string;
+      address: string;
+      photoUrl: string;
+      ethnicity: string;
+      gender: string;
+      dateOfBirth: string;
+      occupation: string;
+      openingDate: string;
+      customerId: number;
+      createdAt: string;
+    };
+  };
 }
 
 export interface VerifyOtpRequest {
@@ -173,7 +204,7 @@ export interface SaveFaydaDataResponse {
 
 export interface ReviewHarmonizationRequest {
   harmonizationRequestId: number;
-  decision: "MERGE" | "REJECT";
+  decision: "HARMONIZED" | "REJECT";
   rejectionReason?: string;
 }
 
@@ -187,7 +218,7 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all harmonizations
     getHarmonizations: builder.query<Harmonization[], void>({
-      query: () => "/api/v1/harmonization?size=2000000",
+      query: () => "/api/v1/harmonization-review",
       providesTags: (result) =>
         result && Array.isArray(result) && result.length > 0
           ? [
@@ -248,24 +279,26 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
       query: (data) => {
         const formData = new FormData();
         
-        // Append all fields to FormData
-        formData.append("phoneNumber", data.phoneNumber);
-        formData.append("name", data.name);
-        formData.append("sub", data.sub);
-        formData.append("birthdate", data.birthdate);
-        formData.append("gender", data.gender);
-        formData.append("addressRegion", data.addressRegion);
+        // Append all fields to FormData (send empty strings for optional fields if not provided)
+        formData.append("phoneNumber", data.phoneNumber || "");
+        formData.append("email", data.email || "");
+        formData.append("familyName", data.familyName || "");
+        formData.append("name", data.name || "");
+        formData.append("givenName", data.givenName || "");
+        formData.append("sub", data.sub || "");
+        formData.append("birthdate", data.birthdate || "");
+        formData.append("gender", data.gender || "");
+        formData.append("addressStreetAddress", data.addressStreetAddress || "");
+        formData.append("addressLocality", data.addressLocality || "");
+        formData.append("addressRegion", data.addressRegion || "");
+        formData.append("addressPostalCode", data.addressPostalCode || "");
+        formData.append("addressCountry", data.addressCountry || "");
         formData.append("harmonizationRequestId", data.harmonizationRequestId.toString());
         
-        // Optional fields
-        if (data.email) formData.append("email", data.email);
-        if (data.familyName) formData.append("familyName", data.familyName);
-        if (data.givenName) formData.append("givenName", data.givenName);
-        if (data.addressStreetAddress) formData.append("addressStreetAddress", data.addressStreetAddress);
-        if (data.addressLocality) formData.append("addressLocality", data.addressLocality);
-        if (data.addressPostalCode) formData.append("addressPostalCode", data.addressPostalCode);
-        if (data.addressCountry) formData.append("addressCountry", data.addressCountry);
-        if (data.picture) formData.append("picture", data.picture);
+        // Append picture file if provided
+        if (data.picture) {
+          formData.append("picture", data.picture);
+        }
 
         return {
           url: "/api/v1/harmonization/save-fayda-data",
@@ -285,7 +318,7 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
     // POST - Review harmonization (merge or reject)
     reviewHarmonization: builder.mutation<ReviewHarmonizationResponse, ReviewHarmonizationRequest>({
       query: (data) => ({
-        url: "/api/v1/harmonization/review",
+        url: "/api/v1/harmonization-review/review",
         method: "POST",
         body: data,
       }),
@@ -293,6 +326,43 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         { type: "Harmonization", id: arg.harmonizationRequestId },
         { type: "Harmonization", id: "LIST" },
       ],
+    }),
+
+    // GET - Get image by ID (returns blob/Resource)
+    getImageById: builder.query<Blob, number>({
+      queryFn: async (imageId) => {
+        const token = secureAuth.getAccessToken();
+        const baseUrl = "/api";
+        // const baseUrl = "http://localhost:9061";
+        
+        try {
+          const response = await fetch(`${baseUrl}/api/v1/harmonization/image/${imageId}`, {
+            headers: {
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "Failed to fetch image");
+            return { 
+              error: { 
+                status: response.status, 
+                data: errorText 
+              } as any
+            };
+          }
+
+          const blob = await response.blob();
+          return { data: blob };
+        } catch (error) {
+          return { 
+            error: { 
+              status: 'FETCH_ERROR' as const, 
+              error: error instanceof Error ? error.message : "Failed to fetch image" 
+            } as any
+          };
+        }
+      },
     }),
   }),
 });
@@ -306,5 +376,6 @@ export const {
   useSaveFaydaDataMutation,
   useGetHarmonizationByIdQuery,
   useReviewHarmonizationMutation,
+  useLazyGetImageByIdQuery,
 } = harmonizationApiSlice;
 

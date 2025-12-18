@@ -10,6 +10,8 @@ import { Step2Fayda } from "@/components/ui/modals/harmonization/Step2Fayda";
 import { Step3Review } from "@/components/ui/modals/harmonization/Step3Review";
 import { useHarmonizationModal } from "@/hooks/use-harmonization-modal";
 import { cn } from "@/lib/utils";
+import { useGetCurrentUserQuery } from "@/features/user/userApiSlice";
+import { isRoleAuthorized } from "@/types/authorities";
 import { toast } from "react-hot-toast";
 import { base64ToBlob } from "@/components/ui/modals/harmonization/utils";
 
@@ -47,21 +49,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   const [showCreate, setShowCreate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const harmonizationModal = useHarmonizationModal();
+  const { data: currentUser } = useGetCurrentUserQuery();
+  const isCreatorAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-CREATOR"]) : false;
   const [saveFaydaData] = useSaveFaydaDataMutation();
-
-  const handleNext = () => {
-    const currentStep = harmonizationModal.currentStep;
-    if (currentStep < 3) {
-      harmonizationModal.setStep((currentStep + 1) as 1 | 2 | 3);
-    }
-  };
-
-  const handleBack = () => {
-    const currentStep = harmonizationModal.currentStep;
-    if (currentStep > 1) {
-      harmonizationModal.setStep((currentStep - 1) as 1 | 2 | 3);
-    }
-  };
 
   const handleSubmit = async () => {
     const { harmonizationData, faydaData } = harmonizationModal;
@@ -76,31 +66,40 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
     try {
       // Convert base64 picture to File if present
       let pictureFile: File | undefined;
-      if (faydaData.picture) {
-        const file = await base64ToBlob(faydaData.picture, "profile-picture.jpg");
+      if (faydaData.pictureUrl) {
+        const file = await base64ToBlob(faydaData.pictureUrl, "profile-picture.jpg");
         if (file) {
           pictureFile = file;
         } else {
           console.warn("Failed to convert picture, continuing without it");
         }
       }
+      // console.log("pictureFile", pictureFile);
+
+      const harmonizationRequestId = harmonizationData.harmonizationRequestId || harmonizationData.accountData?.id;
+      
+      if (!harmonizationRequestId) {
+        toast.error("Missing harmonization request ID");
+        setIsSubmitting(false);
+        return;
+      }
 
       const requestData = {
-        phoneNumber: faydaData.phone_number,
+        phoneNumber: faydaData.phoneNumber,
         email: faydaData.email,
-        familyName: faydaData.family_name,
+        familyName: faydaData.familyName,
         name: faydaData.name,
-        givenName: faydaData.given_name,
+        givenName: faydaData.givenName,
         sub: faydaData.sub,
         picture: pictureFile,
         birthdate: faydaData.birthdate,
         gender: faydaData.gender,
-        addressStreetAddress: faydaData.address.street_address,
-        addressLocality: faydaData.address.locality,
-        addressRegion: faydaData.address.region,
-        addressPostalCode: faydaData.address.postal_code,
-        addressCountry: faydaData.address.country,
-        harmonizationRequestId: harmonizationData.harmonizationRequestId || harmonizationData.accountData?.id,
+        addressStreetAddress: faydaData.addressStreetAddress,
+        addressLocality: faydaData.addressLocality,
+        addressRegion: faydaData.addressRegion,
+        addressPostalCode: faydaData.addressPostalCode,
+        addressCountry: faydaData.addressCountry,
+        harmonizationRequestId,
       };
 
       const response = await saveFaydaData(requestData).unwrap();
@@ -138,7 +137,7 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
 
   if (showCreate) {
     const steps = [
-      { number: 1, title: "OTP Verification", icon: Circle },
+      { number: 1, title: "Account Information", icon: Circle },
       { number: 2, title: "National ID", icon: Circle },
       { number: 3, title: "Review & Submit", icon: Circle },
     ];
@@ -149,7 +148,7 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
         <div className="flex items-center justify-between border-b pb-4">
           <div>
             <h1 className="text-3xl font-bold" style={{ color: "#0db0f1" }}>Create Harmonization</h1>
-            <p className="text-gray-600 mt-1">Complete the 3-step process to harmonize your account with National ID</p>
+            <p className="text-gray-600 mt-1">Complete the 3-step process to harmonize your account with National ID verification</p>
           </div>
           <Button
             variant="ghost"
@@ -225,29 +224,16 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             {harmonizationModal.currentStep === 1 && <Step1OTP />}
             {harmonizationModal.currentStep === 2 && <Step2Fayda />}
             {harmonizationModal.currentStep === 3 && (
-              <Step3Review onSubmit={handleSubmit} isSubmitting={isSubmitting} onBack={handleBack} />
+              <Step3Review onSubmit={handleSubmit} isSubmitting={isSubmitting} />
             )}
           </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex gap-2 mt-8 pt-6 border-t justify-end">
-            {harmonizationModal.currentStep > 1 && harmonizationModal.currentStep < 3 && (
+          {/* Submit Button - Only on Step 3 */}
+          {harmonizationModal.currentStep === 3 && (
+            <div className="flex gap-2 mt-8 pt-6 border-t justify-end">
               <Button
-                variant="outline"
-                onClick={handleBack}
-                className="px-4 py-2 text-sm border-gray-300 hover:bg-gray-50 rounded-lg transition-all"
-              >
-                Previous
-              </Button>
-            )}
-
-            {harmonizationModal.currentStep < 3 && (
-              <Button
-                onClick={handleNext}
-                disabled={
-                  (harmonizationModal.currentStep === 1 && !harmonizationModal.harmonizationData?.accountData?.accountData) ||
-                  (harmonizationModal.currentStep === 2 && !harmonizationModal.faydaData)
-                }
+                onClick={handleSubmit}
+                disabled={isSubmitting}
                 className="px-4 py-2 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all"
                 style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
                 onMouseEnter={(e) => {
@@ -261,42 +247,11 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                   }
                 }}
               >
-                Next
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Submit
               </Button>
-            )}
-
-            {harmonizationModal.currentStep === 3 && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm border-gray-300 hover:bg-gray-50 rounded-lg transition-all"
-                >
-                  Previous
-                </Button>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-sm shadow-md disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-all"
-                  style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.backgroundColor = "#0ba0d8";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.backgroundColor = "#0db0f1";
-                    }
-                  }}
-                >
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit
-                </Button>
-              </>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -309,20 +264,22 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             <h1 className="text-3xl font-bold" style={{ color: "#0db0f1" }}>Harmonization</h1>
             <p className="text-gray-600 mt-1">Manage account harmonization with National ID verification</p>
           </div>
-          <Button
-            onClick={handleOpenCreate}
-            className="shadow-lg"
-            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#0ba0d8";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#0db0f1";
-            }}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Create Harmonization
-          </Button>
+          {isCreatorAuthorized && (
+            <Button
+              onClick={handleOpenCreate}
+              className="shadow-lg"
+              style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#0ba0d8";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#0db0f1";
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Harmonization
+            </Button>
+          )}
         </div>
       
       <div className="bg-white rounded-xl shadow-sm border">
@@ -345,15 +302,17 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No Harmonizations Found</h3>
             <p className="text-gray-600 mb-4">
-              There are no harmonizations yet. Click the button above to create a new one.
+              There are no harmonizations yet.
             </p>
-            <Button
-              onClick={handleOpenCreate}
-              className="bg-blue-600 hover:bg-blue-700 shadow-lg"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Harmonization
-            </Button>
+            {isCreatorAuthorized && (
+              <Button
+                onClick={handleOpenCreate}
+                className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Harmonization
+              </Button>
+            )}
           </div>
         ) : (
           <DataTable

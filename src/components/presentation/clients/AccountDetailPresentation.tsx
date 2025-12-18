@@ -12,8 +12,8 @@ import {
   HomeIcon,
   PhoneIcon,
   X,
-  Edit,
-  GitMerge,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -33,6 +33,7 @@ import { User } from "@/features/user/userApiSlice";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import toast from "react-hot-toast";
 
 type AccountDetailPresentationProps = {
@@ -63,6 +64,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editedAccount, setEditedAccount] = useState<Partial<IndividualAccount>>({});
   const [isMergeDialogOpen, setIsMergeDialogOpen] = useState(false);
+  const [isAuthorizationsOpen, setIsAuthorizationsOpen] = useState(false);
   const settleModal = useSettleModal();
   const [updateCustomerInfo, { isLoading: isMerging }] = useUpdateCustomerInfoMutation();
 
@@ -82,17 +84,17 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
     setRejectionReason("");
   };
 
-  const handleEditClick = () => {
-    if (account) {
-      setEditedAccount({
-        ...account,
-        dateOfBirth: account.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyy-MM-dd") : "",
-        issueDate: account.issueDate ? format(new Date(account.issueDate), "yyyy-MM-dd") : "",
-        expirayDate: account.expirayDate ? format(new Date(account.expirayDate), "yyyy-MM-dd") : "",
-      });
-      setIsEditDialogOpen(true);
-    }
-  };
+  // const handleEditClick = () => {
+  //   if (account) {
+  //     setEditedAccount({
+  //       ...account,
+  //       dateOfBirth: account.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyy-MM-dd") : "",
+  //       issueDate: account.issueDate ? format(new Date(account.issueDate), "yyyy-MM-dd") : "",
+  //       expirayDate: account.expirayDate ? format(new Date(account.expirayDate), "yyyy-MM-dd") : "",
+  //     });
+  //     setIsEditDialogOpen(true);
+  //   }
+  // };
 
   const handleSaveChanges = async () => {
     await handleUpdateIndividualAccount(editedAccount);
@@ -113,11 +115,11 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   };
 
   // Helper function to check if values match
-  const valuesMatch = (val1: any, val2: any): boolean => {
-    if (val1 === val2) return true;
-    if (!val1 || !val2) return false;
-    return String(val1).toLowerCase().trim() === String(val2).toLowerCase().trim();
-  };
+  // const valuesMatch = (val1: any, val2: any): boolean => {
+  //   if (val1 === val2) return true;
+  //   if (!val1 || !val2) return false;
+  //   return String(val1).toLowerCase().trim() === String(val2).toLowerCase().trim();
+  // };
 
   const handleButtonClick = async (action: string, callback: () => Promise<void>) => {
     setLoadingStates((prev) => ({ ...prev, [action]: true }));
@@ -146,7 +148,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           Cancel
         </Button>
 
-        {isCreatorAuthorized && (
+        {/* {isCreatorAuthorized && (
           <Button
             className="border"
             size="sm"
@@ -156,7 +158,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             <Edit className="mr-2 h-4 w-4" />
             Edit Details
           </Button>
-        )}
+        )} */}
 
         {!isVerified && isCreatorAuthorized && account?.status !== "APPROVED" && (
           <Button
@@ -207,7 +209,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
           <Button
             className="border bg-cyan-500"
             size="sm"
-            onClick={() => handleButtonClick("reverseAuthorization", () => handleReverseAuthorization(account.id))}
+            onClick={() => handleButtonClick("reverseAuthorization", () => handleReverseAuthorization(account.accountId))}
             disabled={loadingStates.reverseAuthorization}
           >
             {loadingStates.reverseAuthorization ? "Reversing..." : "Reverse Authorization"}
@@ -275,166 +277,7 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
 
         </CardHeader>
 
-        {/* CBO Account Comparison - Only show if account exists */}
-        {account?.haveCboAccount && account?.customerUserInfo && (
-          <CardContent className="border-t bg-blue-50/30 p-6">
-            <div className="mb-6">
-              <CardTitle className="text-xl font-bold text-gray-800 mb-2">
-                CBO Account Comparison
-              </CardTitle>
-              <p className="text-sm text-gray-600">
-                Compare the National id data with the existing CBO account data
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Current Onboarding Data - Only comparable fields */}
-              <div className="space-y-4 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between pb-3 border-b">
-                  <CardTitle className="text-lg font-semibold text-gray-800">
-                    National Id Data
-                  </CardTitle>
-                  <Badge variant="outline" className="bg-blue-50">NEW</Badge>
-                </div>
-
-                {/* Personal Information */}
-                <div className="space-y-3">
-                  <CardTitle className="text-base font-semibold text-gray-700">Personal Information</CardTitle>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.fullName, account?.customerUserInfo?.fullName) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.fullName || "N/A"} {account?.surname || ""}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Gender/Sex</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.sex, account?.customerUserInfo?.gender) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.sex || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
-                    <p className={`text-gray-700 ${!valuesMatch(
-                      account?.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyyMMdd") : "",
-                      account?.customerUserInfo?.dateOfBirthStr
-                    ) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.dateOfBirth ? format(new Date(account.dateOfBirth), "MM/dd/yyyy") : "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Address Information */}
-                <div className="space-y-3 pt-4 border-t">
-                  <CardTitle className="text-base font-semibold text-gray-700">Address</CardTitle>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">City</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.zoneSubCity || account?.city, account?.customerUserInfo?.addressCity) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.zoneSubCity || account?.city || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Country</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.country, account?.customerUserInfo?.addressCountry) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.country || "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* CBO Account Data - Only comparable fields */}
-              <div className="space-y-4 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center justify-between pb-3 border-b">
-                  <CardTitle className="text-lg font-semibold text-gray-800">
-                    CBO Account Data
-                  </CardTitle>
-                  <Badge variant="outline" className="bg-green-50">EXISTING</Badge>
-                </div>
-
-                {/* Personal Information */}
-                <div className="space-y-3">
-                  <CardTitle className="text-base font-semibold text-gray-700">Personal Information</CardTitle>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Full Name</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.fullName, account?.customerUserInfo?.fullName) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.customerUserInfo?.fullName || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Gender</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.sex, account?.customerUserInfo?.gender) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.customerUserInfo?.gender || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Date of Birth</p>
-                    <p className={`text-gray-700 ${!valuesMatch(
-                      account?.dateOfBirth ? format(new Date(account.dateOfBirth), "yyyyMMdd") : "",
-                      account?.customerUserInfo?.dateOfBirthStr
-                    ) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.customerUserInfo?.dateOfBirthStr ? formatCboDate(account.customerUserInfo.dateOfBirthStr) : "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Address Information */}
-                <div className="space-y-3 pt-4 border-t">
-                  <CardTitle className="text-base font-semibold text-gray-700">Address</CardTitle>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">City</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.zoneSubCity || account?.city, account?.customerUserInfo?.addressCity) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.customerUserInfo?.addressCity || "N/A"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase">Country</p>
-                    <p className={`text-gray-700 ${!valuesMatch(account?.country, account?.customerUserInfo?.addressCountry) ? "font-semibold text-orange-600" : ""}`}>
-                      {account?.customerUserInfo?.addressCountry || "N/A"}
-                    </p>
-                  </div>
-                </div>
-
-
-                {/* External Accounts - Only show if CBO account exists */}
-                <div className="space-y-3 p-2">
-                  {account?.haveCboAccount && account?.customerUserInfo?.externalAccounts && account.customerUserInfo.externalAccounts.length > 0 && (
-                    <CardContent className="border-t">
-                      <CardTitle className="text-lg font-semibold text-gray-800 mb-4">
-                        External Accounts (CBO)
-                      </CardTitle>
-                      <div className="">
-                        {account.customerUserInfo.externalAccounts.map((extAccount) => (
-                          <div key={extAccount.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <p className="font-medium text-gray-700 mb-2">{extAccount.accountTitle}</p>
-                            <div className="space-y-1 text-sm">
-                              <p className="text-gray-600"><span className="font-medium">Account:</span> {extAccount.accountNumber}</p>
-                              <p className="text-gray-600"><span className="font-medium">Branch:</span> {extAccount.branchName}</p>
-                              <p className="text-gray-500 text-xs"><span className="font-medium">Co Code:</span> {extAccount.coCode}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* add button to merge the infomration */}
-            <div className="flex flex-col items-center justify-center py-4 space-y-3">
-              <p className="text-sm text-gray-600 text-center max-w-md">
-                This will merge customer data from Fayda to Core Banking, replacing existing customer information in the core banking system.
-              </p>
-              <Button 
-                className="border bg-cyan-500 hover:bg-cyan-600" 
-                size="sm"
-                onClick={() => setIsMergeDialogOpen(true)}
-              >
-                <GitMerge className="mr-2 h-4 w-4" />
-                Merge Information
-              </Button>
-            </div>
-          </CardContent>
-        )}
+        
 
         {/* Additional Account Details - Always shown below comparison or as main content */}
         <CardContent className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 p-6 ${account?.haveCboAccount ? 'border-t' : ''}`}>
@@ -575,6 +418,194 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
             </div>
           ) : null}
         </CardContent>
+
+      {/* CBO Account Comparison - Only show if account exists */}
+      { account?.haveCboAccount && account?.customerUserInfo && (
+          <CardContent className="border-t bg-blue-50/30 p-6">
+            <div className="w-full">
+              {/* CBO Account Data - Only comparable fields */}
+              <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-200 w-full">
+                <div className="flex items-center justify-between pb-3 border-b mb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-800">
+                    CBO Account Data
+                  </CardTitle>
+                  <Badge variant="outline" className="bg-green-50">EXISTING</Badge>
+                </div>
+
+                {/* Personal Information and Address in Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                  {/* Personal Information */}
+                  <div className="space-y-2">
+                    <CardTitle className="text-base font-semibold text-gray-700 mb-3">Personal Information</CardTitle>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase mb-1">Full Name</p>
+                        <p className={`text-sm text-gray-700`}>
+                          {account?.customerUserInfo?.fullName || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase mb-1">Gender</p>
+                        <p className={`text-sm text-gray-700`}>
+                          {account?.customerUserInfo?.gender || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase mb-1">Date of Birth</p>
+                        <p className={`text-sm text-gray-700`}>
+                          {account?.customerUserInfo?.dateOfBirthStr ? formatCboDate(account.customerUserInfo.dateOfBirthStr) : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Address Information */}
+                  <div className="space-y-2">
+                    <CardTitle className="text-base font-semibold text-gray-700 mb-3">Address</CardTitle>
+                    <div className="space-y-2">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase mb-1">City</p>
+                        <p className={`text-sm text-gray-700`}>
+                          {account?.customerUserInfo?.addressCity || "N/A"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase mb-1">Country</p>
+                        <p className={`text-sm text-gray-700`}>
+                          {account?.customerUserInfo?.addressCountry || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* External Accounts - Only show if CBO account exists */}
+                {account?.haveCboAccount && account?.customerUserInfo?.externalAccounts && account.customerUserInfo.externalAccounts.length > 0 && (
+                  <div className="border-t pt-4 mt-4">
+                    <CardTitle className="text-base font-semibold text-gray-800 mb-3">
+                      External Accounts (CBO)
+                    </CardTitle>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {account.customerUserInfo.externalAccounts.map((extAccount) => (
+                        <div key={extAccount.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                          <p className="font-medium text-gray-700 mb-2 text-sm">{extAccount.accountTitle}</p>
+                          <div className="space-y-1 text-xs">
+                            <p className="text-gray-600"><span className="font-medium">Account:</span> {extAccount.accountNumber}</p>
+                            <p className="text-gray-600"><span className="font-medium">Branch:</span> {extAccount.branchName}</p>
+                            <p className="text-gray-500"><span className="font-medium">Co Code:</span> {extAccount.coCode}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </CardContent>
+        )}
+
+        {/* Approvals Section - Always visible */}
+        {account?.approvals && account.approvals.length > 0 && (
+          <CardContent className="p-6 border-t">
+            <CardTitle className="text-lg font-semibold text-gray-800 mb-4">
+              Approvals
+            </CardTitle>
+            <div className="space-y-3">
+              {account.approvals.map((approval, index) => (
+                <div
+                  key={index}
+                  className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          approval.approvalStatus === "APPROVED"
+                            ? "default"
+                            : approval.approvalStatus === "REJECTED"
+                            ? "destructive"
+                            : "secondary"
+                        }
+                      >
+                        {approval.approvalStatus}
+                      </Badge>
+                      <span className="text-sm font-medium text-gray-700">
+                        {approval.approvedBy}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {approval.approvedAt &&
+                        format(new Date(approval.approvedAt), "MM/dd/yyyy HH:mm:ss")}
+                    </span>
+                  </div>
+                  {approval.reason && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      <span className="font-medium">Reason:</span> {approval.reason}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        )}
+
+        {/* Authorizations Section - Collapsible, default collapsed */}
+        {account?.authorizations && account.authorizations.length > 0 && (
+          <CardContent className="p-6 border-t">
+            <Collapsible open={isAuthorizationsOpen} onOpenChange={setIsAuthorizationsOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full hover:opacity-80 cursor-pointer transition-opacity">
+                <CardTitle className="text-lg font-semibold text-gray-800">
+                  Authorizations ({account.authorizations.length})
+                </CardTitle>
+                {isAuthorizationsOpen ? (
+                  <ChevronDown className="h-5 w-5 text-gray-500" />
+                ) : (
+                  <ChevronRight className="h-5 w-5 text-gray-500" />
+                )}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                <div className="space-y-3">
+                  {account.authorizations.map((authorization, index) => (
+                    <div
+                      key={index}
+                      className="bg-gray-50 p-4 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant={
+                              (authorization as any).eventType === "AUTHORIZED"
+                                ? "default"
+                                : (authorization as any).eventType === "REVERSED"
+                                ? "destructive"
+                                : "secondary"
+                            }
+                          >
+                            {(authorization as any).eventType || "AUTHORIZED"}
+                          </Badge>
+                          <span className="text-sm font-medium text-gray-700">
+                            {authorization.authorizedBy}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {authorization.authorizedAt &&
+                            format(new Date(authorization.authorizedAt), "MM/dd/yyyy HH:mm:ss")}
+                        </span>
+                      </div>
+                      {(authorization as any).reason && (
+                        <p className="text-sm text-gray-600 mt-2">
+                          <span className="font-medium">Reason:</span>{" "}
+                          {(authorization as any).reason}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardContent>
+        )}
 
         <CardContent className="p-6 border-t">
           <div className="flex items-center justify-end border-t pt-5">

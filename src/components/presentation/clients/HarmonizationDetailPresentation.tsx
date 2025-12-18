@@ -20,8 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { isRoleAuthorized } from "@/types/authorities";
 import { User } from "@/features/user/userApiSlice";
-import { HarmonizationDetail } from "@/features/harmonization/harmonizationApiSlice";
-import { GitMerge, X, ArrowLeft } from "lucide-react";
+import { HarmonizationDetail, useLazyGetImageByIdQuery } from "@/features/harmonization/harmonizationApiSlice";
+import { GitMerge, X, ArrowLeft, ZoomIn, File } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 
@@ -78,6 +78,35 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
   const [rejectionReason, setRejectionReason] = useState("");
   const [isMerging, setIsMerging] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+  const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
+  const [isPdf, setIsPdf] = useState<boolean>(false);
+  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
+  const [getImageById] = useLazyGetImageByIdQuery();
+
+  // Helper function to check if URL is a PDF
+  const isPdfFile = (url: string): boolean => {
+    if (!url) return false;
+    const lowerUrl = url.toLowerCase();
+    return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
+  };
+
+  // Handle image card click
+  const handleImageClick = async (imageId: number, imageType: string) => {
+    setIsLoadingImage(true);
+    try {
+      const blob = await getImageById(imageId).unwrap();
+      const imageUrl = URL.createObjectURL(blob);
+      setZoomedImage(imageUrl);
+      setZoomedImageTitle(`${imageType} - Image #${imageId}`);
+      setIsPdf(false);
+    } catch (error) {
+      toast.error("Failed to load image");
+      console.error("Error loading image:", error);
+    } finally {
+      setIsLoadingImage(false);
+    }
+  };
 
   if (isLoading) return <LoadingSkeleton />;
 
@@ -135,6 +164,16 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
     accountData?.dateOfBirth ? format(new Date(accountData.dateOfBirth), "yyyy-MM-dd") : "",
     faydaData?.birthdate ? format(new Date(faydaData.birthdate), "yyyy-MM-dd") : ""
   );
+
+  const proxyBackendFileUrl = (url?: string | null): string | undefined => {
+    if (!url) return undefined;
+  
+    return url.replace(
+      /^https?:\/\/10\.12\.53\.33:9061/,
+      '/backend-files'
+    );
+  }  
+  
 
   return (
     <div className="space-y-6">
@@ -269,6 +308,42 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                   <Badge variant="outline" className="bg-blue-50">NEW</Badge>
                 </div>
 
+                {/* Picture at the top */}
+                {faydaData.pictureUrl && (
+                  <div className="relative w-full h-48 group">
+                    {isPdfFile(faydaData.pictureUrl) ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center rounded border bg-gray-100">
+                        <File className="h-12 w-12 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-600">PDF</p>
+                      </div>
+                    ) : (
+                      <img 
+                        src={proxyBackendFileUrl(faydaData?.pictureUrl)} 
+                        alt="National ID Photo" 
+                        className="w-full h-full object-contain rounded border bg-white"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    )}
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded border flex items-start justify-end p-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="opacity-100"
+                        onClick={() => {
+                          setZoomedImage(faydaData.pictureUrl);
+                          setZoomedImageTitle(`${faydaData.name || 'National ID'} - Photo`);
+                          setIsPdf(isPdfFile(faydaData.pictureUrl));
+                        }}
+                      >
+                        <ZoomIn className="h-4 w-4 mr-2" />
+                        {isPdfFile(faydaData.pictureUrl) ? 'View' : 'Zoom'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Personal Information */}
                 <div className="space-y-3">
                   <CardTitle className="text-base font-semibold text-gray-700">
@@ -335,6 +410,27 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                   </CardTitle>
                   <Badge variant="outline" className="bg-green-50">EXISTING</Badge>
                 </div>
+
+                {/* Images Section */}
+                {harmonization.images && harmonization.images.length > 0 && (
+                  <div className="space-y-3 pb-4 border-b">
+                    <CardTitle className="text-base font-semibold text-gray-700">
+                      Images
+                    </CardTitle>
+                    <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
+                      {harmonization.images.map((image) => (
+                        <button
+                          key={image.id}
+                          onClick={() => handleImageClick(image.id, image.imageType)}
+                          disabled={isLoadingImage}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md border border-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex-shrink-0"
+                        >
+                          {isLoadingImage ? "Loading..." : image.imageType}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Personal Information */}
                 <div className="space-y-3">
@@ -466,6 +562,45 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
               {isRejecting ? "Rejecting..." : "Reject"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image/PDF Zoom Dialog */}
+      <Dialog open={!!zoomedImage} onOpenChange={(open) => {
+        if (!open) {
+          if (zoomedImage && zoomedImage.startsWith('blob:')) {
+            URL.revokeObjectURL(zoomedImage);
+          }
+          setZoomedImage(null);
+          setIsPdf(false);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{zoomedImageTitle}</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center p-4">
+            {zoomedImage && (
+              <>
+                {isPdf ? (
+                  <iframe
+                    src={zoomedImage}
+                    className="w-full h-[70vh] rounded border"
+                    title={zoomedImageTitle}
+                  />
+                ) : (
+                  <img 
+                    src={zoomedImage} 
+                    alt={zoomedImageTitle}
+                    className="max-w-full max-h-[70vh] object-contain rounded"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                )}
+              </>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
