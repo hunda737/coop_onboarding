@@ -291,6 +291,23 @@ const sidebarMenu = {
     //   icon: Settings,
     // },
   ],
+  "ADMIN": [
+    {
+      title: "Dashboard",
+      url: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Users",
+      url: "/users",
+      icon: Users,
+    },
+    {
+      title: "Kyc Admins",
+      url: "/kyc-admins",
+      icon: Users2,
+    }
+  ],
 };
 
 export default sidebarMenu;
