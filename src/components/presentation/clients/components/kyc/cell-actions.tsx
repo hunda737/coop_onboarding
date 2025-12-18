@@ -62,7 +62,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
             <Copy className="mr-2 h-4 w-4" />
             Copy ID
           </DropdownMenuItem>
-          <DropdownMenuItem
+          {/* <DropdownMenuItem
             // onClick={() => router.push(`/admin/accounts/${data.id.toString()}`)}
             onClick={() => navigate(`${data.userId.toString()}`)}
           >
@@ -72,7 +72,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
           <DropdownMenuItem onClick={() => setOpen(true)}>
             <Trash className="mr-2 h-4 w-4" />
             Delete
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
         </DropdownMenuContent>
       </DropdownMenu>
     </>

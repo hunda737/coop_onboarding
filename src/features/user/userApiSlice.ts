@@ -75,7 +75,10 @@ export const userApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: data,
       }),
-      invalidatesTags: [{ type: "Users", id: "USER_LIST" }],
+      invalidatesTags: [
+        { type: "Users", id: "USER_LIST" },
+        { type: "Users", id: "KYC_USER_LIST" },
+      ],
     }),
 
     // PUT - Update user details

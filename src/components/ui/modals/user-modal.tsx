@@ -27,7 +27,7 @@ import {
 import { Button } from "../button";
 import { useCreateUserMutation } from "@/features/user/userApiSlice";
 import { Role, useGetAllRolesQuery } from "@/features/roles/roleApiSlice";
-import { useGetBranchesByDistrictQuery } from "@/features/branches/branchApiSlice";
+import { useGetAllBranchesQuery, useGetBranchesByDistrictQuery } from "@/features/branches/branchApiSlice";
 import { Client } from "@/features/client/clientApiSlice";
 
 // Zod schema
@@ -52,9 +52,13 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
   const [loading, setLoading] = useState(false);
   const [createUser] = useCreateUserMutation();
 
-  const { data: branches } = useGetBranchesByDistrictQuery(
-    String(client?.district)
+  const { data: branches } = useGetAllBranchesQuery(
+    // String(client?.district)
   );
+
+  // const { data: branches } = useGetBranchesByDistrictQuery(
+  //   String(client?.district)
+  // );
   const { data: res } = useGetAllRolesQuery();
 
   useEffect(() => {
@@ -225,7 +229,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
 
             {/* Conditionally render branches */}
             {behavior.showMainBranch && SingleBranchSelect}
-            {behavior.showBranches && BranchSelect}
+            {/* {behavior.showBranches && BranchSelect} */}
 
             {/* Actions */}
             <div className="pt-6 space-x-2 flex items-center justify-end w-full">
