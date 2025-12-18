@@ -293,13 +293,13 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
   // Display Fayda data
   if (faydaData) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-1">
         <div className="text-center bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200">
           <div className="inline-block p-3 bg-green-100 rounded-full mb-3">
             <CheckCircle2 className="h-8 w-8 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-green-600">Verification Successful!</h2>
-          <p className="text-gray-600 mt-2">Your National ID information has been retrieved.</p>
+          <p className="text-gray-400 mt-1">Your National ID information has been retrieved.</p>
         </div>
 
         {faydaData.picture && (
@@ -319,7 +319,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Card className="shadow-md hover:shadow-lg transition-shadow" style={{ borderColor: "#0db0f1", borderWidth: "1px", opacity: 0.2 }}>
+          {/* <Card className="shadow-md hover:shadow-lg transition-shadow" style={{ borderColor: "#0db0f1", borderWidth: "1px", opacity: 0.2 }}>
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
                 <div className="p-2 rounded-lg" style={{ backgroundColor: "#0db0f1", opacity: 0.1 }}>
@@ -331,8 +331,20 @@ export const Step2Fayda: FC<Step2FaydaProps> = ({ onNext, onBack }) => {
                 </div>
               </div>
             </CardContent>
+          </Card> */}
+ <Card className="shadow-md hover:shadow-lg transition-shadow border-purple-100">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <User className="h-5 w-5 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-500 font-medium mb-1">Full Name</p>
+                  <p className="font-bold text-gray-900">{faydaData.name}</p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
-
           <Card className="shadow-md hover:shadow-lg transition-shadow border-purple-100">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
