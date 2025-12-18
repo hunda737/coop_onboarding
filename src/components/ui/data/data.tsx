@@ -82,6 +82,96 @@ export const accountType = [
     color: "#5A5A5A",
     // icon: StopwatchIcon,
   },
+  {
+    value: "Sinqe-women Account",
+    label: "Sinqe-women Account",
+    color: "#5A5A5A",
+    // icon: QuestionMarkCircledIcon,
+  },
+  {
+    value: "Saving Account",
+    label: "Saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Youth saving Account",
+    label: "Youth saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "ECOLFL Saving",
+    label: "ECOLFL Saving",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Farmers Savings Account",
+    label: "Farmers Savings Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Zakat Wadi'ah saving Account",
+    label: "Zakat Wadi'ah saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Wadiah farmers Savings Account",
+    label: "Wadiah farmers Savings Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "TTS Account",
+    label: "TTS Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Wadia ECOLFL Saving Account",
+    label: "Wadia ECOLFL Saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Wadia Saving Account",
+    label: "Wadia Saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Wadia Current Account",
+    label: "Wadia Current Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Farmers Current Account",
+    label: "Farmers Current Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Current Account",
+    label: "Current Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Mudarabah Saving Account",
+    label: "Mudarabah Saving Account",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
+  {
+    value: "Dergego -Youth Mudarabah Saving Acc",
+    label: "Dergego -Youth Mudarabah Saving Acc",
+    color: "#5A5A5A",
+    // icon: StopwatchIcon,
+  },
 ];
 export const customerType = [
   {

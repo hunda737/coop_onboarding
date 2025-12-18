@@ -66,33 +66,33 @@ export const userColumns: ColumnDef<User>[] = [
       return branch ? branch.name : "-";
     },
   },
-  {
-    accessorKey: "branch",
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          branch
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const branch = row.original.branches;
-      return branch ? branch.map((bra) => bra.name).join(" , ") : "-";
-    },
-    filterFn: (row, _, value) => {
-      // If `row.getValue(id)` is an array, check if any element matches filter values
-      const branches = row.original.branches;
+  // {
+  //   accessorKey: "branch",
+  //   header: ({ column }) => {
+  //     return (
+  //       <Button
+  //         variant="ghost"
+  //         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+  //       >
+  //         branch
+  //         <ArrowUpDown className="ml-2 h-4 w-4" />
+  //       </Button>
+  //     );
+  //   },
+  //   cell: ({ row }) => {
+  //     const branch = row.original.branches;
+  //     return branch ? branch.map((bra) => bra.name).join(" , ") : "-";
+  //   },
+  //   filterFn: (row, _, value) => {
+  //     // If `row.getValue(id)` is an array, check if any element matches filter values
+  //     const branches = row.original.branches;
 
-      if (Array.isArray(branches)) {
-        return branches.some((branch) => value.includes(branch.name));
-      }
-      return false;
-    },
-  },
+  //     if (Array.isArray(branches)) {
+  //       return branches.some((branch) => value.includes(branch.name));
+  //     }
+  //     return false;
+  //   },
+  // },
   {
     accessorKey: "registeredAt",
     header: ({ column }) => {

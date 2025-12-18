@@ -1,4 +1,4 @@
-import { apiSlice } from "../api/apiSlice";
+import { apiSlice, baseUrl } from "../api/apiSlice";
 import { secureAuth } from "@/lib/secureAuth";
 
 // TypeScript Interfaces
@@ -332,8 +332,6 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
     getImageById: builder.query<Blob, number>({
       queryFn: async (imageId) => {
         const token = secureAuth.getAccessToken();
-        const baseUrl = "/api";
-        // const baseUrl = "http://localhost:9061";
         
         try {
           const response = await fetch(`${baseUrl}/api/v1/harmonization/image/${imageId}`, {
