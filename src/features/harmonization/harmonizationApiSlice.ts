@@ -218,7 +218,8 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all harmonizations
     getHarmonizations: builder.query<Harmonization[], void>({
-      query: () => "/api/v1/harmonization-review",
+      query: () => "/api/v1/harmonization?size=2000000",
+      // query: () => "/api/v1/harmonization-review",
       providesTags: (result) =>
         result && Array.isArray(result) && result.length > 0
           ? [

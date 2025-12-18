@@ -160,40 +160,38 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
           </Button>
         </div>
 
-        {/* Stepper */}
-        <div className="bg-white rounded-xl shadow-sm border p-8">
-          <div className="flex items-center relative mb-12 px-12">
+        {/* Stepper - Sticky when scrolling, positioned below top navigation */}
+        <div className="sticky top-16 bg-white rounded-xl shadow-sm border p-4 z-40 mb-6 max-w-3xl mx-auto">
+          <div className="flex items-center relative mb-4 px-4">
             {steps.map((step, index) => (
               <div key={step.number} className="flex-1 relative flex flex-col items-center">
                 {/* Step Circle */}
                 <div
                   className={cn(
-                    "w-14 h-14 rounded-full flex items-center justify-center border-3 transition-all duration-300 shadow-lg z-10 relative",
+                    "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-md z-10 relative",
                     harmonizationModal.currentStep > step.number
-                      ? "bg-green-500 border-green-500 text-white"
+                      ? "text-white"
                       : harmonizationModal.currentStep === step.number
-                      ? "text-white scale-110"
+                      ? "text-white scale-105"
                       : "bg-white border-gray-300 text-gray-400"
                   )}
                   style={
-                    harmonizationModal.currentStep === step.number
-                      ? { backgroundColor: "#0db0f1", borderColor: "#0db0f1", borderWidth: "3px" }
-                      : harmonizationModal.currentStep > step.number
-                      ? { borderWidth: "3px" }
-                      : { borderWidth: "3px" }
+                    harmonizationModal.currentStep >= step.number
+                      ? { backgroundColor: "#0db0f1", borderColor: "#0db0f1", borderWidth: "2px" }
+                      : { borderWidth: "2px" }
                   }
                 >
                   {harmonizationModal.currentStep > step.number ? (
-                    <CheckCircle2 className="h-7 w-7" />
+                    <CheckCircle2 className="h-5 w-5 text-white" />
                   ) : (
-                    <span className="font-bold text-xl">{step.number}</span>
+                    <span className="font-bold text-base">{step.number}</span>
                   )}
                 </div>
 
                 {/* Step Title */}
                 <p
                   className={cn(
-                    "text-sm mt-3 text-center font-semibold",
+                    "text-xs mt-2 text-center font-semibold",
                     harmonizationModal.currentStep >= step.number
                       ? "text-gray-900"
                       : "text-gray-400"
@@ -205,9 +203,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 {/* Connector Line - positioned to connect circles */}
                 {index < steps.length - 1 && (
                   <div
-                    className="absolute top-7 left-[50%] h-1 transition-all duration-300 rounded-full"
+                    className="absolute top-5 left-[50%] h-0.5 transition-all duration-300 rounded-full"
                     style={{
-                      width: "calc(100% - 28px)",
+                      width: "calc(100% - 20px)",
                       backgroundColor: harmonizationModal.currentStep > step.number
                         ? "#0db0f1"
                         : "#e5e7eb",
@@ -219,14 +217,15 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
             ))}
           </div>
 
-          {/* Step Content */}
-          <div className="max-w-3xl mx-auto">
-            {harmonizationModal.currentStep === 1 && <Step1OTP />}
-            {harmonizationModal.currentStep === 2 && <Step2Fayda />}
-            {harmonizationModal.currentStep === 3 && (
-              <Step3Review onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-            )}
-          </div>
+        </div>
+
+        {/* Step Content */}
+        <div className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border p-8">
+          {harmonizationModal.currentStep === 1 && <Step1OTP />}
+          {harmonizationModal.currentStep === 2 && <Step2Fayda />}
+          {harmonizationModal.currentStep === 3 && (
+            <Step3Review onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          )}
 
           {/* Submit Button - Only on Step 3 */}
           {harmonizationModal.currentStep === 3 && (
