@@ -165,6 +165,16 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
     faydaData?.birthdate ? format(new Date(faydaData.birthdate), "yyyy-MM-dd") : ""
   );
 
+  const proxyBackendFileUrl = (url?: string | null): string | undefined => {
+    if (!url) return undefined;
+  
+    return url.replace(
+      /^https?:\/\/10\.12\.53\.33:9061/,
+      '/backend-files'
+    );
+  }  
+  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -308,7 +318,7 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                       </div>
                     ) : (
                       <img 
-                        src={faydaData.pictureUrl} 
+                        src={proxyBackendFileUrl(faydaData?.pictureUrl)} 
                         alt="National ID Photo" 
                         className="w-full h-full object-contain rounded border bg-white"
                         onError={(e) => {

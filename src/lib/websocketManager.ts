@@ -3,6 +3,8 @@
  * Singleton pattern for managing WebSocket connections
  */
 
+// import { secureAuth } from "./secureAuth";
+
 export interface WebSocketMessage {
   type: string;
   clientId?: string;
@@ -37,8 +39,10 @@ type MessageHandler = (message: WebSocketMessage) => void;
 export class WebSocketManager {
   private static instance: WebSocketManager | null = null;
   private ws: WebSocket | null = null;
-  private url: string = "wss://coopengage.coopbankoromiasc.com/ws/fayda";
+  // private url: string = "https://10.12.53.33:9061/ws/fayda";
   // private url: string = "wss://10.16.0.25/ws/fayda";
+  // private url: string = "wss://coopengage.coopbank.local/ws/fayda";
+  private url: string = "wss://coopengage.coopbankoromiasc.com/ws/fayda";
   private messageHandlers: Set<MessageHandler> = new Set();
   private reconnectAttempts: number = 0;
   private maxReconnectAttempts: number = 5;
@@ -70,9 +74,17 @@ export class WebSocketManager {
           this.ws = null;
         }
 
+        // Get token and add to URL as query parameter
+        // const token = secureAuth.getAccessToken();
+        let wsUrl = this.url;
+        // if (token) {
+        //   const separator = wsUrl.includes('?') ? '&' : '?';
+        //   wsUrl = `${wsUrl}${separator}token=${encodeURIComponent(token)}`;
+        // }
+
         this.isIntentionallyClosed = false;
-        console.log(`Connecting to WebSocket: ${this.url}`);
-        this.ws = new WebSocket(this.url);
+        console.log(`Connecting to WebSocket: ${wsUrl}`);
+        this.ws = new WebSocket(wsUrl);
 
         let connectionTimeout: NodeJS.Timeout;
         let isResolved = false;

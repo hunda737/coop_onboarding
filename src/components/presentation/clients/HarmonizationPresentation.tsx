@@ -74,6 +74,7 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
           console.warn("Failed to convert picture, continuing without it");
         }
       }
+      // console.log("pictureFile", pictureFile);
 
       const harmonizationRequestId = harmonizationData.harmonizationRequestId || harmonizationData.accountData?.id;
       

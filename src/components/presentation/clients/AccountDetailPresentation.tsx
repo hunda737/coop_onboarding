@@ -35,8 +35,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import toast from "react-hot-toast";
-import { useLazyGetImageByIdQuery } from "@/features/harmonization/harmonizationApiSlice";
-import { ZoomIn, File } from "lucide-react";
 
 type AccountDetailPresentationProps = {
   account: IndividualAccount | undefined;
@@ -69,11 +67,6 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
   const [isAuthorizationsOpen, setIsAuthorizationsOpen] = useState(false);
   const settleModal = useSettleModal();
   const [updateCustomerInfo, { isLoading: isMerging }] = useUpdateCustomerInfoMutation();
-  const [zoomedImage, setZoomedImage] = useState<string | null>(null);
-  const [zoomedImageTitle, setZoomedImageTitle] = useState<string>("");
-  const [isPdf, setIsPdf] = useState<boolean>(false);
-  const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
-  const [getImageById] = useLazyGetImageByIdQuery();
 
   // Loading states for buttons
   const [loadingStates, setLoadingStates] = useState({
@@ -84,30 +77,6 @@ const AccountDetailPresentation: FC<AccountDetailPresentationProps> = ({
     reverseAuthorization: false,
     settle: false,
   });
-
-  // Helper function to check if URL is a PDF
-  const isPdfFile = (url: string): boolean => {
-    if (!url) return false;
-    const lowerUrl = url.toLowerCase();
-    return lowerUrl.endsWith('.pdf') || lowerUrl.includes('.pdf?') || lowerUrl.includes('application/pdf');
-  };
-
-  // Handle image card click
-  const handleImageClick = async (imageId: number, imageType: string) => {
-    setIsLoadingImage(true);
-    try {
-      const blob = await getImageById(imageId).unwrap();
-      const imageUrl = URL.createObjectURL(blob);
-      setZoomedImage(imageUrl);
-      setZoomedImageTitle(`${imageType} - Image #${imageId}`);
-      setIsPdf(false);
-    } catch (error) {
-      toast.error("Failed to load image");
-      console.error("Error loading image:", error);
-    } finally {
-      setIsLoadingImage(false);
-    }
-  };
 
   const confirmRejection = () => {
     handleRejectClick(rejectionReason);
