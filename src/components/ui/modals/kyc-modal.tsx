@@ -55,7 +55,7 @@ export const KycModal: FC<UserModalProps> = ({ clientId }) => {
       const accountApproverRole = roles.find(
         (role) => role.roleName === "ACCOUNT-APPROVER"
       );
-      const roleId = accountApproverRole?.id || 2; // Fallback to 2 if not found
+      const roleId = accountApproverRole?.id || 3; // Fallback to 2 if not found
 
       const response = await createUser({
         email: values.email,

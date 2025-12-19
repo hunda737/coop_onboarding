@@ -43,6 +43,11 @@ const sidebarMenu = {
       icon: Settings2,
       authorizedRoles: ["SUPER-ADMIN"],
     },
+    {
+      title: "Harmonization",
+      url: "/harmonization",
+      icon: Shuffle,
+    },
 
     // {
     //   title: "Settings",
@@ -232,7 +237,7 @@ const sidebarMenu = {
     //   icon: Settings,
     // },
   ],
-  CRM: [
+  "CRM": [
     {
       title: "Dashboard",
       url: "/",
