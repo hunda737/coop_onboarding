@@ -27,7 +27,7 @@ const UserPresentation: FC<UserPresentationProps> = ({
       <div className="flex -mb-12 pb-2 items-center justify-between">
         <div></div>
         <div className="p-2">
-          {currentUser?.role === "ADMIN" && (
+          {/* {currentUser?.role === "ADMIN" && ( */}
             <Button
               size="sm"
               className="bg-primary relative"
@@ -36,7 +36,7 @@ const UserPresentation: FC<UserPresentationProps> = ({
               <Plus className="mr-2 h-4 w-4" />
               Add User
             </Button>
-          )}
+          {/* // )} */}
         </div>
       </div>
       <DataTable

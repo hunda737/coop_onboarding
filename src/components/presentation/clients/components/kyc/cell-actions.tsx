@@ -6,11 +6,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Backpack, Copy, MoreHorizontal, Trash } from "lucide-react";
+import { Copy, MoreHorizontal } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { useDeleteAccountMutation } from "@/features/accounts/accountApiSlice";
-import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 import { AlertModal } from "@/components/ui/modals/alert-modal";
 import { User } from "@/features/user/userApiSlice";
 
@@ -23,7 +23,7 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
     navigator.clipboard.writeText(id);
     toast.success("client ID copied to the clipboard");
   };
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 

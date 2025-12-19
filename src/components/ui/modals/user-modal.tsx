@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { FC, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 
-import { useBranchSelect } from "./react-select";
+// import { useBranchSelect } from "./react-select";
 import { useSingleBranchSelect } from "./react-single-select";
 import { useUserModal } from "@/hooks/use-user-modal";
 import {
@@ -27,8 +27,9 @@ import {
 import { Button } from "../button";
 import { useCreateUserMutation } from "@/features/user/userApiSlice";
 import { Role, useGetAllRolesQuery } from "@/features/roles/roleApiSlice";
-import { useGetAllBranchesQuery, useGetBranchesByDistrictQuery } from "@/features/branches/branchApiSlice";
+import { useGetAllBranchesQuery } from "@/features/branches/branchApiSlice";
 import { Client } from "@/features/client/clientApiSlice";
+// import { log } from "console";
 
 // Zod schema
 const formSchema = z.object({
@@ -51,6 +52,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [createUser] = useCreateUserMutation();
+  console.log("client", client);
 
   const { data: branches } = useGetAllBranchesQuery(
     // String(client?.district)
@@ -78,7 +80,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
     },
   });
 
-  const { BranchSelect } = useBranchSelect(branches || [], form.control);
+  // const { BranchSelect } = useBranchSelect(branches || [], form.control);
   const { SingleBranchSelect } = useSingleBranchSelect(branches || [], form.control);
 
   // Watch role selection

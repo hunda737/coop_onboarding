@@ -332,7 +332,7 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                         variant="secondary"
                         className="opacity-100"
                         onClick={() => {
-                          setZoomedImage(faydaData.pictureUrl);
+                          setZoomedImage(proxyBackendFileUrl(faydaData.pictureUrl) || null);
                           setZoomedImageTitle(`${faydaData.name || 'National ID'} - Photo`);
                           setIsPdf(isPdfFile(faydaData.pictureUrl));
                         }}
