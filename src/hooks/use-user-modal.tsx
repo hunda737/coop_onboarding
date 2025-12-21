@@ -10,6 +10,8 @@ interface useClientModalStore {
     branchIds?: string[];
     mainBranchId?: number;
     status?: string;
+    roleId?: number;
+    role?: string;
   };
   setEditData: (data: {
     fullName?: string;
@@ -18,6 +20,8 @@ interface useClientModalStore {
     mainBranchId?: number;
     status?: string;
     id?: number;
+    roleId?: number;
+    role?: string;
   }) => void;
   onEdit: () => void;
   onOpen: () => void;
@@ -30,8 +34,8 @@ export const useUserModal = create<useClientModalStore>((set) => ({
   editData: {},
   setEditData: (data) => set({ editData: data }),
   onEdit: () => set({ isOpen: true, isEdit: true }),
-  onOpen: () => set({ isOpen: true }),
-  onClose: () => set({ isOpen: false, editData: {} }),
+  onOpen: () => set({ isOpen: true, isEdit: false }),
+  onClose: () => set({ isOpen: false, isEdit: false, editData: {} }),
 }));
 
 export const useAgentManagerModal = create<useClientModalStore>((set) => ({

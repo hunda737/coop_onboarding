@@ -138,6 +138,27 @@ export const harmonizationColumns: ColumnDef<Harmonization>[] = [
     },
   },
   {
+    id: "addedByBranch",
+    accessorFn: (row) => row.addedBy?.branch || "SELF ONBOARD",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Branch
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const branch = row.original.addedBy?.branch;
+      return (
+        <div className={branch ? "" : "text-gray-500 italic"}>
+          {branch || "SELF ONBOARD"}
+        </div>
+      );
+    },
+  },
+  {
     accessorKey: "status",
     header: ({ column }) => (
       <Button

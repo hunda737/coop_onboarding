@@ -25,6 +25,7 @@ import {
 import { DataTablePagination } from "./data-table-pagination";
 import { Input } from "./input";
 import { DataTableToolbar } from "./data-table-toolbar";
+import { DataTableToolbarUser } from "./data-table-toolbar-user";
 import { CheckCheck, Download } from "lucide-react";
 import { Button } from "./button";
 import {
@@ -121,7 +122,11 @@ export function DataTable<TData, TValue>({
         />
         <div className="sm:flex w-full items-center justify-between">
           <div className="sm:ml-2 mb-2">
-            <DataTableToolbar table={table} type={type} />
+            {type === "client" ? (
+              <DataTableToolbarUser table={table} />
+            ) : (
+              <DataTableToolbar table={table} type={type} />
+            )}
           </div>
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">

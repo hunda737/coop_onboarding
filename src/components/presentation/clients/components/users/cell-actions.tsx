@@ -6,26 +6,45 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Copy, MoreHorizontal } from "lucide-react";
+import { Copy, MoreHorizontal, Edit } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useState } from "react";
 import { useDeleteAccountMutation } from "@/features/accounts/accountApiSlice";
 // import { useNavigate } from "react-router-dom";
 import { AlertModal } from "@/components/ui/modals/alert-modal";
-import { User } from "@/features/user/userApiSlice";
+import { User, useGetCurrentUserQuery } from "@/features/user/userApiSlice";
+import { useUserModal } from "@/hooks/use-user-modal";
 
 interface CellActionProps {
   data: User;
 }
 export const CellAction: React.FC<CellActionProps> = ({ data }) => {
   const [deleteAccount] = useDeleteAccountMutation();
+  const userModal = useUserModal();
+  const { data: currentUser } = useGetCurrentUserQuery();
+  
   const onCopy = (id: string) => {
     navigator.clipboard.writeText(id);
     toast.success("client ID copied to the clipboard");
   };
+  
+  const onEdit = () => {
+    userModal.setEditData({
+      id: data.userId,
+      email: data.email,
+      role: data.role,
+      mainBranchId: data.mainBranch?.id,
+      status: data.status,
+    });
+    userModal.onEdit();
+  };
+  
   // const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  
+  // Check if current user is admin or super admin
+  const canEdit = currentUser?.role === "ADMIN" || currentUser?.role === "SUPER-ADMIN";
 
   const onDelete = async () => {
     try {
@@ -62,6 +81,12 @@ export const CellAction: React.FC<CellActionProps> = ({ data }) => {
             <Copy className="mr-2 h-4 w-4" />
             Copy ID
           </DropdownMenuItem>
+          {canEdit && (
+            <DropdownMenuItem onClick={onEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+          )}
           {/* <DropdownMenuItem
             // onClick={() => router.push(`/admin/accounts/${data.id.toString()}`)}
             onClick={() => navigate(`${data.userId.toString()}`)}

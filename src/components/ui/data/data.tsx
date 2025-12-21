@@ -378,6 +378,12 @@ export const userStatus = [
     icon: FileQuestion,
   },
   {
+    value: "INACTIVE",
+    label: "INACTIVE",
+    color: "#0000FF",
+    icon: FileQuestion,
+  },
+  {
     value: "BANNED",
     label: "BANNED",
     color: "#FF0000",

@@ -39,6 +39,13 @@ type UserRequest = {
   mainBranchId: number;
 };
 
+type AdminUserUpdateReq = {
+  userId: number;
+  roleId?: number;
+  mainBranchId?: number | null;
+  status?: "PENDING" | "ACTIVE" | "BANNED";
+};
+
 export const userApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all users for a specific client
@@ -91,6 +98,20 @@ export const userApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (_, __, { userId }) => [{ type: "Users", id: userId }],
     }),
 
+    // PUT - Admin update user
+    adminUpdateUser: builder.mutation<User, AdminUserUpdateReq>({
+      query: (data) => ({
+        url: "/api/v1/users/admin-update",
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: (_, __, { userId }) => [
+        { type: "Users", id: userId },
+        { type: "Users", id: "USER_LIST" },
+        { type: "Users", id: "KYC_USER_LIST" },
+      ],
+    }),
+
     // GET - Get current user (self) details
     getCurrentUser: builder.query<User, void>({
       query: () => "/api/v1/users/me",
@@ -104,6 +125,7 @@ export const {
   useGetKycUsersQuery,
   useCreateUserMutation,
   useUpdateUserMutation,
+  useAdminUpdateUserMutation,
   useGetCurrentUserQuery,
 } = userApiSlice;
-export type { User };
+export type { User, AdminUserUpdateReq };

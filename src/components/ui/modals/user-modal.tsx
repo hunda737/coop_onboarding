@@ -25,10 +25,11 @@ import {
   SelectValue,
 } from "../select";
 import { Button } from "../button";
-import { useCreateUserMutation } from "@/features/user/userApiSlice";
+import { useCreateUserMutation, useAdminUpdateUserMutation } from "@/features/user/userApiSlice";
 import { Role, useGetAllRolesQuery } from "@/features/roles/roleApiSlice";
 import { useGetAllBranchesQuery } from "@/features/branches/branchApiSlice";
 import { Client } from "@/features/client/clientApiSlice";
+import { userStatus } from "../data/data";
 // import { log } from "console";
 
 // Zod schema
@@ -38,8 +39,9 @@ const formSchema = z.object({
   // password: z.string().default(""),
   roleId: z.string(),
   clientId: z.coerce.number().optional(),
-  mainBranchId: z.string(),
+  mainBranchId: z.string().optional(),
   branchIds: z.array(z.string()),
+  status: z.string().optional(),
 });
 
 type UserModalProps = {
@@ -52,6 +54,7 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(false);
   const [createUser] = useCreateUserMutation();
+  const [adminUpdateUser] = useAdminUpdateUserMutation();
   console.log("client", client);
 
   const { data: branches } = useGetAllBranchesQuery(
@@ -77,8 +80,35 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
       roleId: "",
       mainBranchId: "",
       branchIds: [],
+      status: "",
     },
   });
+
+  // Populate form when in edit mode
+  useEffect(() => {
+    if (userModal.isEdit && userModal.editData) {
+      const editData = userModal.editData;
+      
+      // Find roleId from role name
+      const roleId = roles.find((r) => r.roleName === editData.role)?.id;
+      
+      form.reset({
+        email: editData.email || "",
+        roleId: roleId?.toString() || "",
+        mainBranchId: editData.mainBranchId?.toString() || "",
+        branchIds: editData.branchIds || [],
+        status: editData.status || "",
+      });
+    } else {
+      form.reset({
+        email: "",
+        roleId: "",
+        mainBranchId: "",
+        branchIds: [],
+        status: "",
+      });
+    }
+  }, [userModal.isEdit, userModal.editData, form, roles]);
 
   // const { BranchSelect } = useBranchSelect(branches || [], form.control);
   const { SingleBranchSelect } = useSingleBranchSelect(branches || [], form.control);
@@ -104,24 +134,64 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
     try {
       setLoading(true);
 
-      const response = await createUser({
-        // fullName: values.fullName,
-        email: values.email,
-        // password: values.password,
-        roleId: Number(values.roleId),
-        mainBranchId: Number(values.mainBranchId),
-        clientId: clientId || Number(localStorage.getItem("clientId")),
-        branchIds: values.branchIds
-          ? values.branchIds.map((id) => Number(id)).filter((id) => !isNaN(id))
-          : [],
-      });
+      if (userModal.isEdit && userModal.editData?.id) {
+        // Edit mode - use admin update
+        const selectedRole = roles.find((role) => role.id.toString() === values.roleId);
+        const behavior = selectedRole
+          ? roleBehaviors[selectedRole.roleName] || { showMainBranch: false, showBranches: false }
+          : { showMainBranch: false, showBranches: false };
 
-      if (response.data) {
-        toast.success("User Created");
-        userModal.onClose();
-      } else if (response.error) {
-        // @ts-expect-error
-        toast.error(response.error.data.message);
+        const updateData: {
+          userId: number;
+          roleId?: number;
+          mainBranchId?: number | null;
+          status?: "PENDING" | "ACTIVE" | "BANNED";
+        } = {
+          userId: userModal.editData.id,
+          roleId: Number(values.roleId),
+          status: values.status as "PENDING" | "ACTIVE" | "BANNED" | undefined,
+        };
+
+        // Only include mainBranchId if the role requires it
+        if (behavior.showMainBranch && values.mainBranchId) {
+          updateData.mainBranchId = Number(values.mainBranchId);
+        } else if (!behavior.showMainBranch) {
+          // If role doesn't require branch, set to null
+          updateData.mainBranchId = null;
+        }
+
+        const response = await adminUpdateUser(updateData);
+
+        if (response.data) {
+          toast.success("User Updated");
+          userModal.onClose();
+          form.reset();
+        } else if (response.error) {
+          // @ts-expect-error
+          toast.error(response.error.data.message);
+        }
+      } else {
+        // Create mode
+        const response = await createUser({
+          // fullName: values.fullName,
+          email: values.email,
+          // password: values.password,
+          roleId: Number(values.roleId),
+          mainBranchId: Number(values.mainBranchId),
+          clientId: clientId || Number(localStorage.getItem("clientId")),
+          branchIds: values.branchIds
+            ? values.branchIds.map((id) => Number(id)).filter((id) => !isNaN(id))
+            : [],
+        });
+
+        if (response.data) {
+          toast.success("User Created");
+          userModal.onClose();
+          form.reset();
+        } else if (response.error) {
+          // @ts-expect-error
+          toast.error(response.error.data.message);
+        }
       }
     } catch (error: unknown) {
       // @ts-expect-error
@@ -133,8 +203,8 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
 
   return (
     <Modal
-      title="Add User"
-      description="Add a new user"
+      title={userModal.isEdit ? "Edit User" : "Add User"}
+      description={userModal.isEdit ? "Edit user details" : "Add a new user"}
       isOpen={userModal.isOpen}
       onClose={userModal.onClose}
     >
@@ -163,7 +233,13 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
                 <FormItem>
                   <FormLabel>Email:</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="email" {...field} maxLength={50} />
+                    <Input 
+                      type="email" 
+                      placeholder="email" 
+                      {...field} 
+                      maxLength={50}
+                      disabled={userModal.isEdit}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -232,6 +308,44 @@ export const UserModal: FC<UserModalProps> = ({ clientId, client }) => {
             {/* Conditionally render branches */}
             {behavior.showMainBranch && SingleBranchSelect}
             {/* {behavior.showBranches && BranchSelect} */}
+
+            {/* Status - Only in edit mode */}
+            {userModal.isEdit && (
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status:</FormLabel>
+                    <Select
+                      disabled={loading}
+                      onValueChange={field.onChange}
+                      value={field.value || ""}
+                      defaultValue={field.value || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {userStatus
+                          .filter((status) => status.value === "ACTIVE" || status.value === "INACTIVE")
+                          .map((status) => (
+                            <SelectItem
+                              key={status.value}
+                              value={status.value}
+                            >
+                              {status.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {/* Actions */}
             <div className="pt-6 space-x-2 flex items-center justify-end w-full">

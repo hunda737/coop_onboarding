@@ -46,6 +46,9 @@ export const userColumns: ColumnDef<User>[] = [
         </Button>
       );
     },
+    filterFn: (row, _id, value) => {
+      return value.includes(row.getValue("role"));
+    },
   },
   {
     accessorKey: "mainBranch",
@@ -64,6 +67,11 @@ export const userColumns: ColumnDef<User>[] = [
       const branch = row.original.mainBranch;
 
       return branch ? branch.name : "-";
+    },
+    filterFn: (row, _id, value) => {
+      const branch = row.original.mainBranch;
+      if (!branch) return false;
+      return value.includes(branch.name);
     },
   },
   // {
@@ -93,6 +101,16 @@ export const userColumns: ColumnDef<User>[] = [
   //     return false;
   //   },
   // },
+  {accessorKey: "status",
+    header: ({ column }) => {
+      return (
+        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+          Status
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+  },
   {
     accessorKey: "registeredAt",
     header: ({ column }) => {

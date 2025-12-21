@@ -75,6 +75,7 @@ export interface Harmonization {
   createdAt: string;
   updatedAt: string;
   accountData: AccountData;
+  addedBy?: AddedBy;
 }
 
 export interface HarmonizationDetail extends Harmonization {
@@ -217,8 +218,22 @@ export interface ReviewHarmonizationResponse {
 export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all harmonizations
-    getHarmonizations: builder.query<Harmonization[], void>({
-      query: () => "/api/v1/harmonization?size=2000000",
+    getHarmonizations: builder.query<Harmonization[], { status?: string; branchId?: number; districtId?: number }>({
+      query: ({ status, branchId, districtId }) => {
+        let url = `/api/v1/harmonization`;
+        const params = new URLSearchParams();
+        params.append("size", "5000"); // Static size for pagination
+        if (status) {
+          params.append("status", status);
+        }
+        if (branchId !== undefined) {
+          params.append("branchId", branchId.toString());
+        }
+        if (districtId !== undefined) {
+          params.append("districtId", districtId.toString());
+        }
+        return `${url}?${params.toString()}`;
+      },
       // query: () => "/api/v1/harmonization-review",
       providesTags: (result) =>
         result && Array.isArray(result) && result.length > 0
@@ -227,6 +242,8 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
               { type: "Harmonization", id: "LIST" },
             ]
           : [{ type: "Harmonization", id: "LIST" }],
+      // Refetch when component mounts or arguments change
+      keepUnusedDataFor: 0, // Don't keep unused data
       transformResponse: (response: any): Harmonization[] => {
         // Handle different response structures
         let data: Harmonization[] = [];
