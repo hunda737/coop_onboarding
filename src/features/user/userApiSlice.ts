@@ -1,4 +1,5 @@
-import { apiSlice } from "../api/apiSlice";
+import { apiSlice, baseUrl } from "../api/apiSlice";
+import { secureAuth } from "@/lib/secureAuth";
 
 interface User {
   userId: number;
@@ -117,6 +118,44 @@ export const userApiSlice = apiSlice.injectEndpoints({
       query: () => "/api/v1/users/me",
       providesTags: [{ type: "Users", id: "CURRENT_USER" }],
     }),
+
+    // GET - Export users data (returns Excel file)
+    exportUsersData: builder.query<Blob, void>({
+      queryFn: async () => {
+        const token = secureAuth.getAccessToken();
+        
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/v1/users/export`,
+            {
+              headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "Failed to export data");
+            return { 
+              error: { 
+                status: response.status, 
+                data: errorText 
+              } as any
+            };
+          }
+
+          const blob = await response.blob();
+          return { data: blob };
+        } catch (error) {
+          return { 
+            error: { 
+              status: 'FETCH_ERROR' as const, 
+              error: error instanceof Error ? error.message : "Failed to export data" 
+            } as any
+          };
+        }
+      },
+    }),
   }),
 });
 
@@ -127,5 +166,6 @@ export const {
   useUpdateUserMutation,
   useAdminUpdateUserMutation,
   useGetCurrentUserQuery,
+  useLazyExportUsersDataQuery,
 } = userApiSlice;
 export type { User, AdminUserUpdateReq };

@@ -2,7 +2,7 @@ import { Table } from "@tanstack/react-table";
 
 import {
   statuses,
-  harmonizationStatuses,
+  // harmonizationStatuses,
   operations,
   sex,
   accountType,

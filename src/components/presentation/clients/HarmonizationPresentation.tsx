@@ -1,10 +1,10 @@
 import { DataTable } from "@/components/ui/data-table";
-import { Harmonization, useSaveFaydaDataMutation } from "@/features/harmonization/harmonizationApiSlice";
+import { Harmonization, useSaveFaydaDataMutation, useLazyExportHarmonizationDataQuery } from "@/features/harmonization/harmonizationApiSlice";
 import { FC, useState, useMemo } from "react";
 import { harmonizationColumns } from "./components/harmonization/harmonization-columns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Plus, X, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, Loader2, Download } from "lucide-react";
 import { Step1OTP } from "@/components/ui/modals/harmonization/Step1OTP";
 import { Step2Fayda } from "@/components/ui/modals/harmonization/Step2Fayda";
 import { Step3Review } from "@/components/ui/modals/harmonization/Step3Review";
@@ -19,6 +19,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import Select, { SingleValue } from "react-select";
 import { useGetAllBranchesQuery, useGetAllDistrictsQuery } from "@/features/branches/branchApiSlice";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 type HarmonizationStatus = "PENDING_KYC" | "MERGED" | "REJECTED";
 type FilterType = "SELF_ONBOARD" | "BRANCH";
@@ -72,11 +74,16 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
 }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
   const harmonizationModal = useHarmonizationModal();
   const { data: currentUser } = useGetCurrentUserQuery();
   const isCreatorAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-CREATOR"]) : false;
   const isFilterAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-APPROVER", "SUPER-ADMIN"]) : false;
   const [saveFaydaData] = useSaveFaydaDataMutation();
+  const [exportHarmonizationData] = useLazyExportHarmonizationDataQuery();
   const { data: branches } = useGetAllBranchesQuery();
   const { data: districts } = useGetAllDistrictsQuery();
 
@@ -180,6 +187,47 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   const handleClose = () => {
     harmonizationModal.reset();
     setShowCreate(false);
+  };
+
+  const handleExportClick = () => {
+    setShowExportDialog(true);
+  };
+
+  const handleExport = async () => {
+    if (!startDate || !endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+
+    if (new Date(startDate) > new Date(endDate)) {
+      toast.error("Start date must be before or equal to end date");
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      const result = await exportHarmonizationData({ startDate, endDate }).unwrap();
+      
+      // Create a download link
+      const url = window.URL.createObjectURL(result);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `harmonization-export-${startDate}-to-${endDate}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("Export completed successfully");
+      setShowExportDialog(false);
+      setStartDate("");
+      setEndDate("");
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error(error?.data?.message || "Failed to export harmonization data");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Only show loading skeleton for initial load when showCreate is true
@@ -416,6 +464,91 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
           </div>
         </div>
       )}
+
+      {/* Export Button - Only visible for ACCOUNT-APPROVER and SUPER-ADMIN */}
+      {isFilterAuthorized && (
+        <div className="flex justify-end">
+          <Button
+            onClick={handleExportClick}
+            className="shadow-lg"
+            style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#0ba0d8";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#0db0f1";
+            }}
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      )}
+
+      {/* Export Dialog */}
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Export Harmonization Data</DialogTitle>
+            <DialogDescription>
+              Select the date range to export harmonization data as an Excel file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                disabled={isExporting}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="endDate">End Date</Label>
+              <Input
+                id="endDate"
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                disabled={isExporting}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowExportDialog(false);
+                setStartDate("");
+                setEndDate("");
+              }}
+              disabled={isExporting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleExport}
+              disabled={isExporting || !startDate || !endDate}
+              style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = "#0ba0d8";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.backgroundColor = "#0db0f1";
+                }
+              }}
+            >
+              {isExporting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isExporting ? "Exporting..." : "Export"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="bg-white rounded-xl shadow-sm border">
         {isFilterAuthorized ? (

@@ -9,7 +9,7 @@ import { useParams } from "react-router-dom";
 const UserContainer = () => {
   const params = useParams();
   const { data: currentUser } = useGetCurrentUserQuery();
-  const { data: users } = useGetUsersByClientIdQuery(
+  const { data: users, isLoading: isLoadingUsers } = useGetUsersByClientIdQuery(
     params.clientId ? params.clientId : String(currentUser?.client.id)
   );
   const { data: client } = useGetClientByIdQuery(
@@ -21,6 +21,7 @@ const UserContainer = () => {
       users={users}
       clientId={Number(params.clientId || currentUser?.client.id)}
       client={client}
+      isLoading={isLoadingUsers}
     />
   );
 };

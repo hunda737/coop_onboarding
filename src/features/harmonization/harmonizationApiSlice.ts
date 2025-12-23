@@ -380,6 +380,44 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         }
       },
     }),
+
+    // GET - Export harmonization data (returns Excel file)
+    exportHarmonizationData: builder.query<Blob, { startDate: string; endDate: string }>({
+      queryFn: async ({ startDate, endDate }) => {
+        const token = secureAuth.getAccessToken();
+        
+        try {
+          const response = await fetch(
+            `${baseUrl}/api/v1/harmonization/export?startDate=${startDate}&endDate=${endDate}`,
+            {
+              headers: {
+                ...(token && { Authorization: `Bearer ${token}` }),
+              },
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text().catch(() => "Failed to export data");
+            return { 
+              error: { 
+                status: response.status, 
+                data: errorText 
+              } as any
+            };
+          }
+
+          const blob = await response.blob();
+          return { data: blob };
+        } catch (error) {
+          return { 
+            error: { 
+              status: 'FETCH_ERROR' as const, 
+              error: error instanceof Error ? error.message : "Failed to export data" 
+            } as any
+          };
+        }
+      },
+    }),
   }),
 });
 
@@ -393,5 +431,6 @@ export const {
   useGetHarmonizationByIdQuery,
   useReviewHarmonizationMutation,
   useLazyGetImageByIdQuery,
+  useLazyExportHarmonizationDataQuery,
 } = harmonizationApiSlice;
 
