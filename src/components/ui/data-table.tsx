@@ -38,6 +38,13 @@ import { useAssignBulkCRMModal } from "@/hooks/use-assign-crm-modal";
 import { useSettleModal } from "@/hooks/use-settle-modal";
 import { SettleModal } from "./modals/settle-modal";
 
+interface PaginationInfo {
+  totalPages: number;
+  totalElements: number;
+  currentPage: number;
+  pageSize: number;
+}
+
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
@@ -46,6 +53,9 @@ interface DataTableProps<TData, TValue> {
   onUrl: boolean;
   pageInfo?: HeadersPageInfo;
   type: string;
+  paginationInfo?: PaginationInfo;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -54,6 +64,9 @@ export function DataTable<TData, TValue>({
   searchKey,
   clickable,
   type,
+  paginationInfo,
+  onPageChange,
+  onPageSizeChange,
 }: DataTableProps<TData, TValue>) {
   localStorage.setItem("clickable", clickable.toString());
   // const navigate = useNavigate();
@@ -69,6 +82,9 @@ export function DataTable<TData, TValue>({
     React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // Determine if we should use server-side pagination
+  const useServerPagination = paginationInfo !== undefined && onPageChange !== undefined && onPageSizeChange !== undefined;
+
   const table = useReactTable({
     data,
     columns,
@@ -78,6 +94,11 @@ export function DataTable<TData, TValue>({
       rowSelection,
       columnFilters,
     },
+    // Server-side pagination configuration
+    ...(useServerPagination && {
+      manualPagination: true,
+      pageCount: paginationInfo.totalPages,
+    }),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -267,7 +288,12 @@ export function DataTable<TData, TValue>({
           )}
         </TableBody>
       </Table>
-      <DataTablePagination table={table} />
+      <DataTablePagination 
+        table={table} 
+        paginationInfo={paginationInfo}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 }

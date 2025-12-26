@@ -66,6 +66,10 @@ console.log(currentUser);
     savedFilters?.selectedBranchId
   );
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  
   const backendStatus = useMemo(() => mapStatusToBackend(status), [status]);
   
   // Save filters to localStorage whenever they change
@@ -94,14 +98,23 @@ console.log(currentUser);
   }, [filterType, selectedBranchId]);
   
   // For non-authorized users, fetch all harmonizations without filters
-  const { data: harmonizations, isLoading, isFetching, isError, error } = useGetHarmonizationsQuery(
+  const { data: paginatedResponse, isLoading, isFetching, isError, error } = useGetHarmonizationsQuery(
     isFilterAuthorized 
-      ? { status: backendStatus, branchId, districtId: selectedDistrictId }
-      : {},
+      ? { status: backendStatus, branchId, districtId: selectedDistrictId, page: currentPage, size: pageSize }
+      : { page: currentPage, size: pageSize },
     {
       refetchOnMountOrArgChange: true, // Always refetch when arguments change or component mounts
     }
   );
+  
+  // Extract harmonizations and pagination info
+  const harmonizations = paginatedResponse?.content || [];
+  const paginationInfo = paginatedResponse ? {
+    totalPages: paginatedResponse.totalPages,
+    totalElements: paginatedResponse.totalElements,
+    currentPage: paginatedResponse.number,
+    pageSize: paginatedResponse.size,
+  } : undefined;
 
   // Log for debugging
   if (error) {
@@ -111,10 +124,15 @@ console.log(currentUser);
   if (harmonizations) {
     console.log("Harmonizations data:", harmonizations);
   }
+  
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [status, filterType, selectedDistrictId, selectedBranchId]);
 
   return (
     <HarmonizationPresentation
-      harmonizations={harmonizations || []}
+      harmonizations={harmonizations}
       isLoading={isLoading || isFetching}
       isError={isError}
       error={error}
@@ -126,6 +144,9 @@ console.log(currentUser);
       onDistrictIdChange={setSelectedDistrictId}
       selectedBranchId={selectedBranchId}
       onBranchIdChange={setSelectedBranchId}
+      paginationInfo={paginationInfo}
+      onPageChange={setCurrentPage}
+      onPageSizeChange={setPageSize}
     />
   );
 };

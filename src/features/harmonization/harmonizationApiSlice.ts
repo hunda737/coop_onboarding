@@ -214,15 +214,30 @@ export interface ReviewHarmonizationResponse {
   message: string;
 }
 
+export interface PaginatedHarmonizationResponse {
+  content: Harmonization[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
+}
+
 // RTK Query Endpoints
 export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    // GET - Get all harmonizations
-    getHarmonizations: builder.query<Harmonization[], { status?: string; branchId?: number; districtId?: number }>({
-      query: ({ status, branchId, districtId }) => {
+    // GET - Get all harmonizations with pagination
+    getHarmonizations: builder.query<PaginatedHarmonizationResponse, { status?: string; branchId?: number; districtId?: number; page?: number; size?: number; sortBy?: string; sortDirection?: string }>({
+      query: ({ status, branchId, districtId, page = 0, size = 10, sortBy = "createdAt", sortDirection = "desc" }) => {
         let url = `/api/v1/harmonization`;
         const params = new URLSearchParams();
-        params.append("size", "5000"); // Static size for pagination
+        params.append("page", page.toString());
+        params.append("size", size.toString());
+        params.append("sortBy", sortBy);
+        params.append("sortDirection", sortDirection);
         if (status) {
           params.append("status", status);
         }
@@ -234,38 +249,47 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         }
         return `${url}?${params.toString()}`;
       },
-      // query: () => "/api/v1/harmonization-review",
       providesTags: (result) =>
-        result && Array.isArray(result) && result.length > 0
+        result && result.content && result.content.length > 0
           ? [
-              ...result.map(({ id }) => ({ type: "Harmonization" as const, id })),
+              ...result.content.map(({ id }) => ({ type: "Harmonization" as const, id })),
               { type: "Harmonization", id: "LIST" },
             ]
           : [{ type: "Harmonization", id: "LIST" }],
       // Refetch when component mounts or arguments change
       keepUnusedDataFor: 0, // Don't keep unused data
-      transformResponse: (response: any): Harmonization[] => {
-        // Handle different response structures
-        let data: Harmonization[] = [];
-        
-        if (Array.isArray(response)) {
-          data = response;
-        } else if (response?.data && Array.isArray(response.data)) {
-          data = response.data;
-        } else if (response?.content && Array.isArray(response.content)) {
-          data = response.content;
-        } else if (response?.items && Array.isArray(response.items)) {
-          data = response.items;
-        } else {
-          console.warn("Unknown harmonization response structure:", response);
-          return [];
+      transformResponse: (response: any): PaginatedHarmonizationResponse => {
+        // Handle paginated response from backend
+        if (response && response.content && Array.isArray(response.content)) {
+          return {
+            content: response.content.map((item: any) => ({
+              ...item,
+              accountData: item.accountData || {}
+            })),
+            totalPages: response.totalPages || 0,
+            totalElements: response.totalElements || 0,
+            size: response.size || 0,
+            number: response.number || 0,
+            first: response.first || false,
+            last: response.last || false,
+            numberOfElements: response.numberOfElements || 0,
+            empty: response.empty || false,
+          };
         }
         
-        // Ensure all items have accountData
-        return data.map(item => ({
-          ...item,
-          accountData: item.accountData || {}
-        }));
+        // Fallback for unexpected response structure
+        console.warn("Unknown harmonization response structure:", response);
+        return {
+          content: [],
+          totalPages: 0,
+          totalElements: 0,
+          size: 0,
+          number: 0,
+          first: true,
+          last: true,
+          numberOfElements: 0,
+          empty: true,
+        };
       },
     }),
 

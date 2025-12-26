@@ -25,6 +25,13 @@ import { Input } from "@/components/ui/input";
 type HarmonizationStatus = "PENDING_KYC" | "MERGED" | "REJECTED";
 type FilterType = "SELF_ONBOARD" | "BRANCH";
 
+type PaginationInfo = {
+  totalPages: number;
+  totalElements: number;
+  currentPage: number;
+  pageSize: number;
+};
+
 type HarmonizationPresentationProps = {
   harmonizations: Harmonization[];
   isLoading: boolean;
@@ -38,6 +45,9 @@ type HarmonizationPresentationProps = {
   onDistrictIdChange: (districtId: number | undefined) => void;
   selectedBranchId?: number;
   onBranchIdChange: (branchId: number | undefined) => void;
+  paginationInfo?: PaginationInfo;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
 };
 
 const LoadingSkeleton = () => (
@@ -71,6 +81,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   onDistrictIdChange,
   selectedBranchId,
   onBranchIdChange,
+  paginationInfo,
+  onPageChange,
+  onPageSizeChange,
 }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -624,6 +637,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                   searchKey="accountNumber"
                   clickable={true}
                   onUrl={false}
+                  paginationInfo={paginationInfo}
+                  onPageChange={onPageChange}
+                  onPageSizeChange={onPageSizeChange}
                 />
               </div>
             )}
@@ -676,6 +692,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                   searchKey="accountNumber"
                   clickable={true}
                   onUrl={false}
+                  paginationInfo={paginationInfo}
+                  onPageChange={onPageChange}
+                  onPageSizeChange={onPageSizeChange}
                 />
               </div>
             )}
@@ -728,6 +747,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                   searchKey="accountNumber"
                   clickable={true}
                   onUrl={false}
+                  paginationInfo={paginationInfo}
+                  onPageChange={onPageChange}
+                  onPageSizeChange={onPageSizeChange}
                 />
               </div>
             )}
@@ -782,6 +804,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                   searchKey="accountNumber"
                   clickable={true}
                   onUrl={false}
+                  paginationInfo={paginationInfo}
+                  onPageChange={onPageChange}
+                  onPageSizeChange={onPageSizeChange}
                 />
               </div>
             )}
