@@ -3,8 +3,8 @@ import { setAuthState, clearToken } from "../auth/authSlice";
 import { secureAuth } from "@/lib/secureAuth";
 
 // Export baseUrl for use in other API slices
-export const baseUrl = "http://localhost:9061";
-// export const baseUrl = "/api";
+// export const baseUrl = "http://localhost:9061";
+export const baseUrl = "/api";
 // export const baseUrl = "http://10.12.53.56:9062";
 // export const baseUrl = "http://10.8.100.111:9061";
 // export const baseUrl = "https://10.12.53.33:9061";

@@ -56,13 +56,13 @@ const UserPresentation: FC<UserPresentationProps> = ({
   return (
     <div>
       {clientId && client && <UserModal clientId={clientId} client={client} />}
-      <div className="flex -mb-12 pb-2 items-center justify-between">
+      <div className="flex items-center justify-between mb-4 pb-2 relative z-10">
         <div></div>
         <div className="p-2 flex gap-2">
           {isExportAuthorized && (
             <Button
               size="sm"
-              className="bg-primary relative"
+              className="bg-primary relative z-20"
               onClick={handleExport}
               disabled={isExporting}
             >
@@ -82,7 +82,7 @@ const UserPresentation: FC<UserPresentationProps> = ({
           {(currentUser?.role === "ADMIN" || currentUser?.role === "SUPER-ADMIN") && (
             <Button
               size="sm"
-              className="bg-primary relative"
+              className="bg-primary relative z-20"
               onClick={() => userModal.onOpen()}
             >
               <Plus className="mr-2 h-4 w-4" />
