@@ -109,7 +109,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
         }
       });
       
-      // Set authentication timeout (5 minutes)
+      // Set authentication timeout (10 minutes)
       authTimeout = setTimeout(() => {
         if (!harmonizationModal.faydaData) {
           toast.error("Authentication timeout. Please try again.");
@@ -119,7 +119,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
           unsubscribe();
           wsManager.disconnect();
         }
-      }, 300000);
+      }, 600000);
 
       // Get Fayda URL
       console.log("Fetching Fayda URL for clientId:", newClientId);
