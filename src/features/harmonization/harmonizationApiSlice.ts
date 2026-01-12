@@ -236,8 +236,8 @@ export interface PaginatedHarmonizationResponse {
 export const harmonizationApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // GET - Get all harmonizations with pagination
-    getHarmonizations: builder.query<PaginatedHarmonizationResponse, { status?: string; branchId?: number; districtId?: number; page?: number; size?: number; sortBy?: string; sortDirection?: string }>({
-      query: ({ status, branchId, districtId, page = 0, size = 10, sortBy = "createdAt", sortDirection = "desc" }) => {
+    getHarmonizations: builder.query<PaginatedHarmonizationResponse, { status?: string; branchId?: number; districtId?: number; page?: number; size?: number; sortBy?: string; sortDirection?: string; accountNumber?: string }>({
+      query: ({ status, branchId, districtId, page = 0, size = 10, sortBy = "createdAt", sortDirection = "desc", accountNumber }) => {
         let url = `/api/v1/harmonization`;
         const params = new URLSearchParams();
         params.append("page", page.toString());
@@ -252,6 +252,9 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         }
         if (districtId !== undefined) {
           params.append("districtId", districtId.toString());
+        }
+        if (accountNumber && accountNumber.trim()) {
+          params.append("accountNumber", accountNumber.trim());
         }
         return `${url}?${params.toString()}`;
       },

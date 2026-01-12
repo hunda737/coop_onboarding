@@ -70,6 +70,9 @@ console.log(currentUser);
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
   
+  // Search state
+  const [searchAccountNumber, setSearchAccountNumber] = useState<string>("");
+  
   const backendStatus = useMemo(() => mapStatusToBackend(status), [status]);
   
   // Save filters to localStorage whenever they change
@@ -100,8 +103,19 @@ console.log(currentUser);
   // For non-authorized users, fetch all harmonizations without filters
   const { data: paginatedResponse, isLoading, isFetching, isError, error } = useGetHarmonizationsQuery(
     isFilterAuthorized 
-      ? { status: backendStatus, branchId, districtId: selectedDistrictId, page: currentPage, size: pageSize }
-      : { page: currentPage, size: pageSize },
+      ? { 
+          status: backendStatus, 
+          branchId: branchId ?? undefined, 
+          districtId: selectedDistrictId ?? undefined, 
+          page: currentPage ?? 0, 
+          size: pageSize ?? 10, 
+          accountNumber: (searchAccountNumber && searchAccountNumber.trim()) ? searchAccountNumber.trim() : undefined 
+        }
+      : { 
+          page: currentPage ?? 0, 
+          size: pageSize ?? 10, 
+          accountNumber: (searchAccountNumber && searchAccountNumber.trim()) ? searchAccountNumber.trim() : undefined 
+        },
     {
       refetchOnMountOrArgChange: true, // Always refetch when arguments change or component mounts
     }
@@ -128,7 +142,7 @@ console.log(currentUser);
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [status, filterType, selectedDistrictId, selectedBranchId]);
+  }, [status, filterType, selectedDistrictId, selectedBranchId, searchAccountNumber]);
 
   return (
     <HarmonizationPresentation
@@ -147,6 +161,8 @@ console.log(currentUser);
       paginationInfo={paginationInfo}
       onPageChange={setCurrentPage}
       onPageSizeChange={setPageSize}
+      searchAccountNumber={searchAccountNumber}
+      onSearchAccountNumberChange={setSearchAccountNumber}
     />
   );
 };

@@ -1,10 +1,10 @@
 import { DataTable } from "@/components/ui/data-table";
 import { Harmonization, useSaveFaydaDataMutation, useLazyExportHarmonizationDataQuery } from "@/features/harmonization/harmonizationApiSlice";
-import { FC, useState, useMemo } from "react";
+import { FC, useState, useMemo, useEffect } from "react";
 import { harmonizationColumns } from "./components/harmonization/harmonization-columns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Plus, X, CheckCircle2, Circle, Loader2, Download } from "lucide-react";
+import { Plus, X, CheckCircle2, Circle, Loader2, Download, Search } from "lucide-react";
 import { Step1OTP } from "@/components/ui/modals/harmonization/Step1OTP";
 import { Step2Fayda } from "@/components/ui/modals/harmonization/Step2Fayda";
 import { Step3Review } from "@/components/ui/modals/harmonization/Step3Review";
@@ -48,6 +48,8 @@ type HarmonizationPresentationProps = {
   paginationInfo?: PaginationInfo;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  searchAccountNumber: string;
+  onSearchAccountNumberChange: (accountNumber: string) => void;
 };
 
 const LoadingSkeleton = () => (
@@ -84,6 +86,8 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   paginationInfo,
   onPageChange,
   onPageSizeChange,
+  searchAccountNumber,
+  onSearchAccountNumberChange,
 }) => {
   const [showCreate, setShowCreate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -91,7 +95,25 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
   const harmonizationModal = useHarmonizationModal();
+
+  // Sync search input with prop when it changes externally
+  useEffect(() => {
+    if (searchAccountNumber !== undefined && searchAccountNumber !== null) {
+      setSearchInput(searchAccountNumber || "");
+    } else {
+      setSearchInput("");
+    }
+  }, [searchAccountNumber]);
+
+  // Clear search when tab changes
+  useEffect(() => {
+    setSearchInput("");
+    if (onSearchAccountNumberChange) {
+      onSearchAccountNumberChange("");
+    }
+  }, [status, onSearchAccountNumberChange]);
   const { data: currentUser } = useGetCurrentUserQuery();
   const isCreatorAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-CREATOR"]) : false;
   const isFilterAuthorized = currentUser ? isRoleAuthorized(currentUser.role, ["ACCOUNT-APPROVER", "SUPER-ADMIN"]) : false;
@@ -589,7 +611,59 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 REJECTED
               </TabsTrigger>
             </TabsList>
-          
+
+              <div className="space-y-4 p-4">
+                <div className="flex items-center gap-2 left">
+                  <div className="relative flex-1 max-w-xs">
+                    <Input
+                      type="text"
+                      placeholder="Search by account number..."
+                      value={searchInput || ""}
+                      onChange={(e) => setSearchInput(e.target.value || "")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && onSearchAccountNumberChange) {
+                          onSearchAccountNumberChange(searchInput || "");
+                        }
+                      }}
+                      className="pr-8"
+                    />
+                    {searchInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchInput("");
+                          if (onSearchAccountNumberChange) {
+                            onSearchAccountNumberChange("");
+                          }
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Clear search"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <Button
+                    onClick={() => {
+                      if (onSearchAccountNumberChange) {
+                        onSearchAccountNumberChange(searchInput || "");
+                      }
+                    }}
+                    className="shadow-md"
+                    style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#0ba0d8";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#0db0f1";
+                    }}
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </Button>
+                </div>
+              </div>
+              
           <TabsContent value="PENDING_KYC" className="mt-0">
             {isLoading ? (
               <div className="p-8">
@@ -627,27 +701,28 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 )}
               </div>
             ) : (
-              <div className="relative">
-                {isLoading && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="text-sm text-gray-600">Loading...</span>
+                
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                        <span className="text-sm text-gray-600">Loading...</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                <DataTable
-                  columns={harmonizationColumns}
-                  data={harmonizations}
-                  type="harmonization"
-                  searchKey="accountNumber"
-                  clickable={true}
-                  onUrl={false}
-                  paginationInfo={paginationInfo}
-                  onPageChange={onPageChange}
-                  onPageSizeChange={onPageSizeChange}
-                />
-              </div>
+                  )}
+                  <DataTable
+                    columns={harmonizationColumns}
+                    data={harmonizations}
+                    type="harmonization"
+                    searchKey="accountNumber"
+                    clickable={true}
+                    onUrl={false}
+                    paginationInfo={paginationInfo}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                  />
+                </div>
             )}
           </TabsContent>
 
@@ -682,27 +757,27 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="relative">
-                {isLoading && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="text-sm text-gray-600">Loading...</span>
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                        <span className="text-sm text-gray-600">Loading...</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                <DataTable
-                  columns={harmonizationColumns}
-                  data={harmonizations}
-                  type="harmonization"
-                  searchKey="accountNumber"
-                  clickable={true}
-                  onUrl={false}
-                  paginationInfo={paginationInfo}
-                  onPageChange={onPageChange}
-                  onPageSizeChange={onPageSizeChange}
-                />
-              </div>
+                  )}
+                  <DataTable
+                    columns={harmonizationColumns}
+                    data={harmonizations}
+                    type="harmonization"
+                    searchKey="accountNumber"
+                    clickable={true}
+                    onUrl={false}
+                    paginationInfo={paginationInfo}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                  />
+                </div>
             )}
           </TabsContent>
 
@@ -737,27 +812,27 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="relative">
-                {isLoading && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="text-sm text-gray-600">Loading...</span>
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                        <span className="text-sm text-gray-600">Loading...</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                <DataTable
-                  columns={harmonizationColumns}
-                  data={harmonizations}
-                  type="harmonization"
-                  searchKey="accountNumber"
-                  clickable={true}
-                  onUrl={false}
-                  paginationInfo={paginationInfo}
-                  onPageChange={onPageChange}
-                  onPageSizeChange={onPageSizeChange}
-                />
-              </div>
+                  )}
+                  <DataTable
+                    columns={harmonizationColumns}
+                    data={harmonizations}
+                    type="harmonization"
+                    searchKey="accountNumber"
+                    clickable={true}
+                    onUrl={false}
+                    paginationInfo={paginationInfo}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                  />
+                </div>
             )}
           </TabsContent>
           </Tabs>
@@ -794,26 +869,78 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
                 </p>
               </div>
             ) : (
-              <div className="relative">
-                {isLoading && (
-                  <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                      <span className="text-sm text-gray-600">Loading...</span>
-                    </div>
+              <div className="space-y-4">
+                {/* Search Section */}
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1 max-w-xs">
+                    <Input
+                      type="text"
+                      placeholder="Search by account number..."
+                      value={searchInput || ""}
+                      onChange={(e) => setSearchInput(e.target.value || "")}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && onSearchAccountNumberChange) {
+                          onSearchAccountNumberChange(searchInput || "");
+                        }
+                      }}
+                      className="pr-8"
+                    />
+                    {searchInput && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchInput("");
+                          if (onSearchAccountNumberChange) {
+                            onSearchAccountNumberChange("");
+                          }
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        aria-label="Clear search"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
-                )}
-                <DataTable
-                  columns={harmonizationColumns}
-                  data={harmonizations}
-                  type="harmonization"
-                  searchKey="accountNumber"
-                  clickable={true}
-                  onUrl={false}
-                  paginationInfo={paginationInfo}
-                  onPageChange={onPageChange}
-                  onPageSizeChange={onPageSizeChange}
-                />
+                  <Button
+                    onClick={() => {
+                      if (onSearchAccountNumberChange) {
+                        onSearchAccountNumberChange(searchInput || "");
+                      }
+                    }}
+                    className="shadow-md"
+                    style={{ backgroundColor: "#0db0f1", borderColor: "#0db0f1" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#0ba0d8";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#0db0f1";
+                    }}
+                  >
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </Button>
+                </div>
+                <div className="relative">
+                  {isLoading && (
+                    <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                        <span className="text-sm text-gray-600">Loading...</span>
+                      </div>
+                    </div>
+                  )}
+                  <DataTable
+                    columns={harmonizationColumns}
+                    data={harmonizations}
+                    type="harmonization"
+                    searchKey="accountNumber"
+                    clickable={true}
+                    onUrl={false}
+                    paginationInfo={paginationInfo}
+                    onPageChange={onPageChange}
+                    onPageSizeChange={onPageSizeChange}
+                  />
+                </div>
               </div>
             )}
           </div>

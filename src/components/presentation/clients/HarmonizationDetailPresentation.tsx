@@ -401,8 +401,8 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                         faydaData.addressRegion,
                         faydaData.addressPostalCode,
                         faydaData.addressCountry,
-                        faydaData.addressZone,
-                        faydaData.addressWoreda,
+                        // faydaData.addressZone,
+                        // faydaData.addressWoreda,
                       ]
                         .filter(Boolean)
                         .join(", ") || "N/A"}
