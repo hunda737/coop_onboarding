@@ -27,10 +27,13 @@ export interface FaydaAuthenticationResult {
       region: string;
       postal_code?: string;
       country?: string;
+      zone?: string;
+      woreda?: string;
     };
     given_name?: string;
     family_name?: string;
     email?: string;
+    nationality?: string;
   };
 }
 

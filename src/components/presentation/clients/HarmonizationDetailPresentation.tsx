@@ -20,8 +20,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { isRoleAuthorized } from "@/types/authorities";
 import { User } from "@/features/user/userApiSlice";
-import { HarmonizationDetail, useLazyGetImageByIdQuery } from "@/features/harmonization/harmonizationApiSlice";
-import { GitMerge, X, ArrowLeft, ZoomIn, File } from "lucide-react";
+import { HarmonizationDetail, useLazyGetImageByIdQuery, useRefetchImageMutation } from "@/features/harmonization/harmonizationApiSlice";
+import { GitMerge, X, ArrowLeft, ZoomIn, File, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 
@@ -83,6 +83,7 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
   const [isPdf, setIsPdf] = useState<boolean>(false);
   const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
   const [getImageById] = useLazyGetImageByIdQuery();
+  const [refetchImage, { isLoading: isRefetchingImage }] = useRefetchImageMutation();
 
   // Helper function to check if URL is a PDF
   const isPdfFile = (url: string): boolean => {
@@ -105,6 +106,17 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
       console.error("Error loading image:", error);
     } finally {
       setIsLoadingImage(false);
+    }
+  };
+
+  const handleRefetchImages = async () => {
+    if (!harmonization) return;
+    try {
+      await refetchImage(harmonization.id).unwrap();
+      toast.success("Images refetched successfully");
+    } catch (error) {
+      toast.error("Failed to refetch images");
+      console.error("Error refetching images:", error);
     }
   };
 
@@ -344,6 +356,7 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                   </div>
                 )}
 
+
                 {/* Personal Information */}
                 <div className="space-y-3">
                   <CardTitle className="text-base font-semibold text-gray-700">
@@ -388,6 +401,8 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                         faydaData.addressRegion,
                         faydaData.addressPostalCode,
                         faydaData.addressCountry,
+                        faydaData.addressZone,
+                        faydaData.addressWoreda,
                       ]
                         .filter(Boolean)
                         .join(", ") || "N/A"}
@@ -400,6 +415,7 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                     </div>
                   )}
                 </div>
+
               </div>
 
               {/* Account Data - Right Side */}
@@ -431,6 +447,20 @@ const HarmonizationDetailPresentation: FC<HarmonizationDetailPresentationProps> 
                     </div>
                   </div>
                 )}
+                
+                {/*Button to refetch images */}
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRefetchImages()} 
+                    disabled={isRefetchingImage}
+                    className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${isRefetchingImage ? 'animate-spin' : ''}`} />
+                    {isRefetchingImage ? "Refetching..." : "Refetch Images"}
+                  </Button>
+                </div>
 
                 {/* Personal Information */}
                 <div className="space-y-3">

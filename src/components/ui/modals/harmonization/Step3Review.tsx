@@ -14,7 +14,8 @@ export const Step3Review: FC<Step3ReviewProps> = ({ onSubmit: _onSubmit, isSubmi
 
   const { harmonizationData, faydaData } = harmonizationModal;
   const accountData = harmonizationData?.accountData?.accountData;
-
+  // console.log("faydaData", faydaData);
+  
   if (!accountData || !faydaData) {
     return (
       <div className="text-center py-8">

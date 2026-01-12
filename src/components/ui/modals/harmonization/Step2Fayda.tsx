@@ -77,7 +77,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
       const unsubscribe = wsManager.onMessage((message) => {
         if (message.type === "authentication_result") {
           const authResult = message as FaydaAuthenticationResult;
-          
+          // console.log("authResult", authResult);
           if (authResult.clientId === newClientId && authResult.data) {
             clearTimeout(authTimeout);
             
@@ -98,6 +98,9 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
               addressRegion: authResult.data.address?.region || "",
               addressPostalCode: authResult.data.address?.postal_code || "",
               addressCountry: authResult.data.address?.country || "",
+              addressZone: authResult.data.address?.zone || "",
+              addressWoreda: authResult.data.address?.woreda || "",
+              nationality: authResult.data.nationality || "",
               createdAt: new Date().toISOString(),
             });
 
@@ -109,7 +112,7 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
         }
       });
       
-      // Set authentication timeout (10 minutes)
+      // Set authentication timeout (15 minutes)
       authTimeout = setTimeout(() => {
         if (!harmonizationModal.faydaData) {
           toast.error("Authentication timeout. Please try again.");
@@ -119,14 +122,14 @@ export const Step2Fayda: FC<Step2FaydaProps> = () => {
           unsubscribe();
           wsManager.disconnect();
         }
-      }, 600000);
+      }, 900000);
 
       // Get Fayda URL
-      console.log("Fetching Fayda URL for clientId:", newClientId);
+      // console.log("Fetching Fayda URL for clientId:", newClientId);
       let response;
       try {
         response = await getFaydaUrl(newClientId).unwrap();
-        console.log("Fayda URL received:", response);
+        // console.log("Fayda URL received:", response);
       } catch (urlError: any) {
         console.error("Error fetching Fayda URL:", urlError);
         toast.error(urlError?.data?.message || "Failed to get authentication URL. Please try again.");

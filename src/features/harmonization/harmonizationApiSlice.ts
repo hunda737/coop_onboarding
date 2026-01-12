@@ -39,6 +39,9 @@ export interface FaydaData {
   addressRegion: string;
   addressPostalCode: string;
   addressCountry: string;
+  addressZone: string;
+  addressWoreda: string;
+  nationality: string;
   createdAt: string;
 }
 
@@ -194,6 +197,9 @@ export interface SaveFaydaDataRequest {
   addressRegion: string;
   addressPostalCode?: string;
   addressCountry?: string;
+  addressZone?: string;
+  addressWoreda?: string;
+  nationality?: string;
   harmonizationRequestId: number;
 }
 
@@ -335,6 +341,9 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
         formData.append("addressRegion", data.addressRegion || "");
         formData.append("addressPostalCode", data.addressPostalCode || "");
         formData.append("addressCountry", data.addressCountry || "");
+        formData.append("addressZone", data.addressZone || "");
+        formData.append("addressWoreda", data.addressWoreda || "");
+        formData.append("nationality", data.nationality || "");
         formData.append("harmonizationRequestId", data.harmonizationRequestId.toString());
         
         // Append picture file if provided
@@ -355,6 +364,15 @@ export const harmonizationApiSlice = apiSlice.injectEndpoints({
     getHarmonizationById: builder.query<HarmonizationDetail, number>({
       query: (id) => `/api/v1/harmonization/${id}`,
       providesTags: (_result, _error, id) => [{ type: "Harmonization" as const, id }],
+    }),
+
+    // POST - Refetch images
+    refetchImage: builder.mutation<void, number>({
+      query: (id) => ({
+        url: `/api/v1/harmonization/refetch-image/${id}`,
+        method: "POST",
+      }),
+      invalidatesTags: (_result, _error, id) => [{ type: "Harmonization" as const, id }],
     }),
 
     // POST - Review harmonization (merge or reject)
@@ -455,6 +473,7 @@ export const {
   useGetHarmonizationByIdQuery,
   useReviewHarmonizationMutation,
   useLazyGetImageByIdQuery,
+  useRefetchImageMutation,
   useLazyExportHarmonizationDataQuery,
 } = harmonizationApiSlice;
 

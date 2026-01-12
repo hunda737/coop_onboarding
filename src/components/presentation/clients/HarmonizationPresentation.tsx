@@ -131,6 +131,9 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
       return;
     }
 
+    // console.log("faydaData", faydaData);
+    // console.log("harmonizationData", harmonizationData);
+
     setIsSubmitting(true);
 
     try {
@@ -164,11 +167,14 @@ const HarmonizationPresentation: FC<HarmonizationPresentationProps> = ({
         picture: pictureFile,
         birthdate: faydaData.birthdate,
         gender: faydaData.gender,
+        nationality: faydaData.nationality,
         addressStreetAddress: faydaData.addressStreetAddress,
         addressLocality: faydaData.addressLocality,
         addressRegion: faydaData.addressRegion,
         addressPostalCode: faydaData.addressPostalCode,
         addressCountry: faydaData.addressCountry,
+        addressZone: faydaData.addressZone,
+        addressWoreda: faydaData.addressWoreda,
         harmonizationRequestId,
       };
 
